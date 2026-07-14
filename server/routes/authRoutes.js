@@ -1,6 +1,6 @@
 import express from 'express';
-import { register, login, logout, getMe } from '../controllers/authController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { register, login, logout, getMe, promoteToAdmin, promoteToInstructor, promoteToSuperAdmin } from '../controllers/authController.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -8,5 +8,8 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe); // protect runs first — if it fails, getMe never runs
+router.patch('/promote', protect, authorize('superadmin'), promoteToAdmin);
+router.patch('/promote-superadmin', protect, authorize('superadmin'), promoteToSuperAdmin);
+router.patch('/promote-instructor', protect, authorize('superadmin', 'admin'), promoteToInstructor);
 
 export default router;

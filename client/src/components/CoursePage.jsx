@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import api from '../api/axios';
 
 export default function CoursePage({ cart = [], setCart }) {
   const { id } = useParams();
@@ -7,23 +8,73 @@ export default function CoursePage({ cart = [], setCart }) {
   const [activeTab, setActiveTab] = useState('syllabus');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
-  // Mock course data since we don't have a backend yet
-  const course = {
-    id: id || '123',
-    title: "Advanced React Patterns & System Design",
-    instructor: "Dr. Sarah Ahmed",
-    rating: "4.9",
-    students: "12,450",
-    price: "EGP 450",
-    originalPrice: "EGP 1,200",
-    description: "Master React by building enterprise-level applications. Learn how to architect scalable frontends, manage complex state, and implement design systems from scratch.",
-    modules: [
-      { title: "Module 1: Foundations of Enterprise React", lessons: 4, duration: "2h 15m" },
-      { title: "Module 2: Advanced State Management (Zustand & Redux)", lessons: 6, duration: "3h 45m" },
-      { title: "Module 3: Design Systems & CSS Architecture", lessons: 5, duration: "2h 30m" },
-      { title: "Module 4: Performance Optimization & Web Vitals", lessons: 4, duration: "1h 50m" },
-    ]
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [enrollError, setEnrollError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await api.get(`/courses/${id}`);
+        setCourse({
+          id: data.course._id,
+          title: data.course.title,
+          instructor: data.course.instructor?.name || 'Instructor',
+          rating: "4.9",
+          students: "1,245",
+          price: `EGP ${data.course.price}`,
+          originalPrice: `EGP ${Math.round(data.course.price * 1.5)}`,
+          description: data.course.description,
+          modules: [
+            { 
+              title: "Course Content", 
+              lessons: data.lessons.length, 
+              duration: "N/A" 
+            }
+          ]
+        });
+        
+        try {
+          const enrollRes = await api.get(`/enrollments/${id}`);
+          if (enrollRes.data && enrollRes.data.enrolled) {
+            setIsEnrolled(true);
+          }
+        } catch(e) {
+          // Ignore, likely 404 (not enrolled)
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch course');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  const handleEnroll = async () => {
+    setIsEnrolling(true);
+    setEnrollError('');
+    try {
+      await api.post(`/enrollments/${id}`);
+      setIsEnrolled(true);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setIsEnrolled(true);
+      } else {
+        setEnrollError(err.response?.data?.message || 'Failed to enroll');
+      }
+    } finally {
+      setIsEnrolling(false);
+    }
   };
+
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center', color: 'white', fontSize: '1.2rem' }}>Loading course details...</div>;
+  if (error) return <div style={{ padding: '100px', textAlign: 'center', color: '#ef4444', fontSize: '1.2rem' }}>{error}</div>;
+  if (!course) return null;
 
   return (
     <div className="course-page animate-entrance" style={{ padding: '0 20px', maxWidth: '1200px', margin: '0 auto', paddingBottom: '60px' }}>
@@ -122,9 +173,18 @@ export default function CoursePage({ cart = [], setCart }) {
             </div>
             <p style={{ color: '#10B981', fontSize: '0.95rem', fontWeight: '600', marginTop: '-8px' }}>62% off - limited time!</p>
             
-            <button onClick={() => navigate(`/checkout/${course.id}`)} className="glass-btn auth-submit-btn" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '12px' }}>
-              Enroll Now
-            </button>
+            {enrollError && <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '8px' }}>{enrollError}</div>}
+            
+            {isEnrolled ? (
+              <button onClick={() => navigate(`/learn/${course.id}`)} className="glass-btn auth-submit-btn" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '12px', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.5)' }}>
+                Go to Course
+              </button>
+            ) : (
+              <button onClick={handleEnroll} disabled={isEnrolling} className="glass-btn auth-submit-btn" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', cursor: isEnrolling ? 'not-allowed' : 'pointer', marginBottom: '12px' }}>
+                {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+              </button>
+            )}
+            
             <button 
               onClick={() => {
                 if (setCart && !cart.find(c => c.id === course.id)) {

@@ -4,7 +4,7 @@ import { currentUser } from '../data';
 import logoDark from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
 
-export default function TopNav({ activeTab, setActiveTab, toggleTheme, isLightMode, onLogout, cartCount, notifications }) {
+export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isLightMode, onLogout, cartCount, notifications }) {
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const exploreRef = useRef(null);
   const dashboardRef = useRef(null);
@@ -128,8 +128,9 @@ export default function TopNav({ activeTab, setActiveTab, toggleTheme, isLightMo
               </svg>
             </div>
             <div className="profile-tooltip">
-              <div className="tooltip-name">{currentUser.name}</div>
+              <div className="tooltip-name">{user?.name || currentUser.name}</div>
               <hr className="tooltip-divider" />
+              <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>Role: {user?.role || 'student'}</div>
               <a href="#" className="tooltip-link">Profile</a>
               <a href="#" className="tooltip-link">Settings</a>
               <hr className="tooltip-divider" />
@@ -154,6 +155,19 @@ export default function TopNav({ activeTab, setActiveTab, toggleTheme, isLightMo
         >
           Dashboard
         </button>
+        
+        {user?.role === 'instructor' && (
+          <Link to="/instructor" className="nav-tab" style={{ textDecoration: 'none' }}>
+            Instructor Portal
+          </Link>
+        )}
+        
+        {user?.role === 'admin' && (
+          <Link to="/admin" className="nav-tab" style={{ textDecoration: 'none' }}>
+            Admin Portal
+          </Link>
+        )}
+
         <button className="nav-tab">My Courses</button>
         <button className="nav-tab" disabled>
           Certificates <span className="badge-soon">Coming soon</span>
