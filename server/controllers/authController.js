@@ -5,7 +5,7 @@ import generateTokenAndSetCookie from '../utils/generateToken.js';
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -21,7 +21,7 @@ export const register = async (req, res) => {
     // created manually (e.g. directly in the DB or by another admin).
     const safeRole = role === 'instructor' ? 'instructor' : 'student';
 
-    const user = await User.create({ name, email, password, role: safeRole });
+    const user = await User.create({ name, email, password, role: safeRole, phone: phone || '' });
 
     generateTokenAndSetCookie(res, user._id);
 
@@ -60,6 +60,10 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
     generateTokenAndSetCookie(res, user._id);
 
     res.status(200).json({
@@ -92,4 +96,73 @@ export const getMe = async (req, res) => {
   // req.user is attached by the `protect` middleware after verifying the cookie.
   // By the time we get here, we already know the user is authenticated.
   res.status(200).json({ user: req.user });
+};
+
+// @route   PATCH /api/auth/promote
+// @access  Private (Admin only)
+export const promoteToAdmin = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.role = 'admin';
+    await user.save();
+
+    res.status(200).json({ message: 'User promoted to admin successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error promoting user', error: error.message });
+  }
+};
+
+// @route   PATCH /api/auth/promote-instructor
+// @access  Private (Admin only)
+export const promoteToInstructor = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.role = 'instructor';
+    await user.save();
+
+    res.status(200).json({ message: 'User promoted to instructor successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error promoting user', error: error.message });
+  }
+};
+
+// @route   PATCH /api/auth/promote-superadmin
+// @access  Private (Super Admin only)
+export const promoteToSuperAdmin = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.role = 'superadmin';
+    await user.save();
+
+    res.status(200).json({ message: 'User promoted to super admin successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error promoting user', error: error.message });
+  }
 };

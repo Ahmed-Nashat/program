@@ -18,7 +18,7 @@ const router = express.Router();
 router.get('/', getApprovedCourses);
 
 // --- Admin (must come before /:id so 'pending' isn't parsed as an id) ---
-router.get('/pending', protect, authorize('admin'), getPendingCourses);
+router.get('/pending', protect, authorize('admin', 'superadmin'), getPendingCourses);
 
 // --- Instructor ---
 router.post('/', protect, authorize('instructor'), createCourse);
@@ -27,8 +27,8 @@ router.post('/:courseId/lessons', protect, authorize('instructor'), addLesson);
 router.get('/:courseId/lessons/:lessonId', protect, getLessonContent);
 
 // --- Admin actions on a specific course ---
-router.patch('/:id/approve', protect, authorize('admin'), approveCourse);
-router.patch('/:id/reject', protect, authorize('admin'), rejectCourse);
+router.patch('/:id/approve', protect, authorize('admin', 'superadmin'), approveCourse);
+router.patch('/:id/reject', protect, authorize('admin', 'superadmin'), rejectCourse);
 
 // --- Course details (public + owner/admin see extra) ---
 router.get('/:id', optionalAuth, getCourseById);

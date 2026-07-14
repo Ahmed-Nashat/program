@@ -21,6 +21,10 @@ const enrollmentSchema = new mongoose.Schema(
         ref: 'Lesson',
       },
     ],
+    amountPaid: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

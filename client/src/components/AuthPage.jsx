@@ -64,6 +64,8 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState('student');
+  const [phone, setPhone] = useState('');
   
   // Step 2 Fields
   const [university, setUniversity] = useState('');
@@ -147,7 +149,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
     setAuthError('');
     setIsCreatingAccount(true);
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', { name, email, password, role, phone });
       onLoginSuccess(response.data.user);
     } catch (err) {
       setAuthError(err.response?.data?.message || 'Registration failed');
@@ -295,6 +297,25 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                   {/* Step 1: Account */}
                   {(!isLogin && registerStep === 1) && (
                     <div className="step-content animate-entrance">
+                      <div className="role-selection" style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem' }}>
+                        <div 
+                          className={`role-card ${role === 'student' ? 'selected' : ''}`} 
+                          onClick={() => setRole('student')}
+                          style={{ flex: 1, padding: '1rem', border: `2px solid ${role === 'student' ? '#4f46e5' : 'transparent'}`, borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: role === 'student' ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-secondary, rgba(255,255,255,0.05))' }}
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', color: role === 'student' ? '#4f46e5' : 'currentColor' }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                          <div style={{ fontWeight: '600' }}>Student</div>
+                        </div>
+                        <div 
+                          className={`role-card ${role === 'instructor' ? 'selected' : ''}`} 
+                          onClick={() => setRole('instructor')}
+                          style={{ flex: 1, padding: '1rem', border: `2px solid ${role === 'instructor' ? '#4f46e5' : 'transparent'}`, borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: role === 'instructor' ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-secondary, rgba(255,255,255,0.05))' }}
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', color: role === 'instructor' ? '#4f46e5' : 'currentColor' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                          <div style={{ fontWeight: '600' }}>Instructor</div>
+                        </div>
+                      </div>
+                      
                       <div className="input-row">
                         <div className="input-group">
                           <label>Full Name *</label>
@@ -302,7 +323,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                         </div>
                         <div className="input-group">
                           <label>Phone Number *</label>
-                          <input type="tel" placeholder="+20 100 000 0000" required={!isLogin} />
+                          <input type="tel" placeholder="+20 100 000 0000" required={!isLogin} value={phone} onChange={(e) => setPhone(e.target.value)} />
                         </div>
                       </div>
                     </div>

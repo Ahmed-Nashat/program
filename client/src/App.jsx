@@ -5,9 +5,12 @@ import TopNav from './components/TopNav';
 import ExploreTab from './components/ExploreTab';
 import DashboardTab from './components/DashboardTab';
 import AuthPage from './components/AuthPage';
+import AdminAuthPage from './components/AdminAuthPage';
 import CoursePage from './components/CoursePage';
 import LearningPortal from './components/LearningPortal';
 import CheckoutPage from './components/CheckoutPage';
+import InstructorPortal from './components/InstructorPortal';
+import AdminPortal from './components/AdminPortal';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -118,7 +121,10 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <main className="content" style={{ padding: '20px' }}>
-        <AuthPage onLoginSuccess={handleLogin} isLightMode={isLightMode} toggleTheme={toggleTheme} />
+        <Routes>
+          <Route path="/auth/admin" element={<AdminAuthPage onLoginSuccess={(userData) => { setUser(userData); setIsAuthenticated(true); navigate('/admin'); }} isLightMode={isLightMode} toggleTheme={toggleTheme} />} />
+          <Route path="*" element={<AuthPage onLoginSuccess={handleLogin} isLightMode={isLightMode} toggleTheme={toggleTheme} />} />
+        </Routes>
       </main>
     );
   }
@@ -128,19 +134,29 @@ export default function App() {
   if (location.pathname.includes('/dashboard')) activeTab = 'dashboard';
 
   // The Learning Portal and Checkout Page have their own fullscreen layouts
-  if (location.pathname.includes('/learn/') || location.pathname.includes('/checkout/')) {
+  if (location.pathname.startsWith('/learn/') || location.pathname.startsWith('/checkout/') || location.pathname === '/instructor' || location.pathname === '/admin') {
     return (
       <Routes>
         <Route path="/learn/:id" element={<LearningPortal />} />
         <Route path="/checkout/:id" element={<CheckoutPage cart={cart} setCart={setCart} setNotifications={setNotifications} />} />
         <Route path="/checkout/cart" element={<CheckoutPage cart={cart} setCart={setCart} setNotifications={setNotifications} isCartCheckout={true} />} />
+        <Route path="/instructor" element={<InstructorPortal user={user} onLogout={handleLogout} />} />
+        <Route path="/admin" element={<AdminPortal user={user} onLogout={handleLogout} />} />
       </Routes>
     );
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (location.pathname.startsWith('/auth')) {
+    if (user?.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user?.role === 'instructor') return <Navigate to="/instructor" replace />;
+    return <Navigate to="/student" replace />;
   }
 
   return (
     <>
       <TopNav 
+        user={user}
         activeTab={activeTab} 
         setActiveTab={(tab) => navigate(tab === 'explore' ? '/student' : `/student/${tab}`)} 
         toggleTheme={toggleTheme} 
@@ -155,7 +171,6 @@ export default function App() {
           <Route path="/student" element={<ExploreTab user={user} />} />
           <Route path="/student/dashboard" element={<DashboardTab />} />
           <Route path="/course/:id" element={<CoursePage cart={cart} setCart={setCart} />} />
-          <Route path="/instructor" element={<div style={{padding:'20px'}}><h2>Instructor Portal (Coming Soon)</h2></div>} />
         </Routes>
       </main>
     </>

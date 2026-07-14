@@ -21,7 +21,11 @@ export const enroll = async (req, res) => {
       return res.status(409).json({ message: 'You are already enrolled in this course' });
     }
 
-    const enrollment = await Enrollment.create({ student: req.user.id, course: courseId });
+    const enrollment = await Enrollment.create({ 
+      student: req.user.id, 
+      course: courseId,
+      amountPaid: course.price
+    });
     res.status(201).json({ enrollment });
   } catch (error) {
     // A duplicate-key error (code 11000) means the unique index caught a
