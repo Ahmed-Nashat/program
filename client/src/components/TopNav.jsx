@@ -168,7 +168,12 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
           </Link>
         )}
 
-        <button className="nav-tab">My Courses</button>
+        <button
+          className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          My Courses
+        </button>
         <button className="nav-tab" disabled>
           Certificates <span className="badge-soon">Coming soon</span>
         </button>
