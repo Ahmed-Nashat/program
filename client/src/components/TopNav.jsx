@@ -162,7 +162,7 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
           </Link>
         )}
         
-        {user?.role === 'admin' && (
+        {(user?.role === 'admin' || user?.role === 'superadmin') && (
           <Link to="/admin" className="nav-tab" style={{ textDecoration: 'none' }}>
             Admin Portal
           </Link>

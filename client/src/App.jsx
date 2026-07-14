@@ -100,7 +100,13 @@ export default function App() {
   const handleLogin = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
-    navigate('/student');
+    if (userData.role === 'superadmin' || userData.role === 'admin') {
+      navigate('/admin');
+    } else if (userData.role === 'instructor') {
+      navigate('/instructor');
+    } else {
+      navigate('/student');
+    }
   };
 
   const handleLogout = async () => {
