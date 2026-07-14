@@ -1,0 +1,163 @@
+import { useState, useEffect } from 'react';
+import api from './api/axios';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import TopNav from './components/TopNav';
+import ExploreTab from './components/ExploreTab';
+import DashboardTab from './components/DashboardTab';
+import AuthPage from './components/AuthPage';
+import CoursePage from './components/CoursePage';
+import LearningPortal from './components/LearningPortal';
+import CheckoutPage from './components/CheckoutPage';
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+  const [user, setUser] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+      } catch (err) {
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    fetchSession();
+  }, []);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    return localStorage.getItem('isLightMode') === 'true';
+  });
+  
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('notifications');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Filter out notifications older than 1 month (30 days)
+        const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        return parsed.filter(n => n.timestamp > oneMonthAgo);
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    localStorage.setItem('isAuthenticated', isAuthenticated);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    localStorage.setItem('isAuthenticated', isAuthenticated);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    localStorage.setItem('isLightMode', isLightMode);
+  }, [isLightMode]);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    if (isLightMode) {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+  }, [isLightMode]);
+
+  const toggleTheme = () => {
+    setIsLightMode(!isLightMode);
+  };
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    navigate('/student');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate('/');
+  };
+
+  if (isInitializing) {
+    return <div style={{display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center'}}>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="content" style={{ padding: '20px' }}>
+        <AuthPage onLoginSuccess={handleLogin} isLightMode={isLightMode} toggleTheme={toggleTheme} />
+      </main>
+    );
+  }
+
+  // Derive activeTab for the TopNav indicator based on the URL
+  let activeTab = 'explore';
+  if (location.pathname.includes('/dashboard')) activeTab = 'dashboard';
+
+  // The Learning Portal and Checkout Page have their own fullscreen layouts
+  if (location.pathname.includes('/learn/') || location.pathname.includes('/checkout/')) {
+    return (
+      <Routes>
+        <Route path="/learn/:id" element={<LearningPortal />} />
+        <Route path="/checkout/:id" element={<CheckoutPage cart={cart} setCart={setCart} setNotifications={setNotifications} />} />
+        <Route path="/checkout/cart" element={<CheckoutPage cart={cart} setCart={setCart} setNotifications={setNotifications} isCartCheckout={true} />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <>
+      <TopNav 
+        activeTab={activeTab} 
+        setActiveTab={(tab) => navigate(tab === 'explore' ? '/student' : `/student/${tab}`)} 
+        toggleTheme={toggleTheme} 
+        isLightMode={isLightMode}
+        onLogout={handleLogout}
+        cartCount={cart.length}
+        notifications={notifications}
+      />
+      <main className="content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/student" replace />} />
+          <Route path="/student" element={<ExploreTab user={user} />} />
+          <Route path="/student/dashboard" element={<DashboardTab />} />
+          <Route path="/course/:id" element={<CoursePage cart={cart} setCart={setCart} />} />
+          <Route path="/instructor" element={<div style={{padding:'20px'}}><h2>Instructor Portal (Coming Soon)</h2></div>} />
+        </Routes>
+      </main>
+    </>
+  );
+}
