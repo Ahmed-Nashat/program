@@ -2,6 +2,16 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from './models/User.js';
 import Course from './models/Course.js';
+import Lesson from './models/Lesson.js';
+
+// Public domain sample clips (Google's GTV test bucket) so the video player
+// has something real to play — these are not meant to match lesson topics.
+const SAMPLE_VIDEO_URLS = [
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+];
 
 const seedDatabase = async () => {
   try {
@@ -21,9 +31,10 @@ const seedDatabase = async () => {
       });
     }
 
-    console.log('Clearing old courses...');
-    // Clear existing mock courses if any
+    console.log('Clearing old courses and lessons...');
+    // Clear existing mock courses/lessons if any
     await Course.deleteMany({});
+    await Lesson.deleteMany({});
 
     console.log('Seeding mock courses...');
     const courses = [
@@ -34,7 +45,13 @@ const seedDatabase = async () => {
         category: "Development",
         instructor: instructor._id,
         status: "approved",
-        thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=600&auto=format&fit=crop"
+        thumbnailUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=600&auto=format&fit=crop",
+        lessons: [
+          "Component Composition Patterns",
+          "Advanced Hooks: useReducer & useContext",
+          "Performance Optimization with memo & useMemo",
+          "Building a Reusable Design System",
+        ],
       },
       {
         title: "Python for Data Science",
@@ -43,7 +60,13 @@ const seedDatabase = async () => {
         category: "Data",
         instructor: instructor._id,
         status: "approved",
-        thumbnailUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?q=80&w=600&auto=format&fit=crop"
+        thumbnailUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?q=80&w=600&auto=format&fit=crop",
+        lessons: [
+          "Python Fundamentals for Data Analysis",
+          "Working with Pandas DataFrames",
+          "Data Visualization with Matplotlib",
+          "Intro to Machine Learning with scikit-learn",
+        ],
       },
       {
         title: "UI/UX Masterclass",
@@ -52,7 +75,12 @@ const seedDatabase = async () => {
         category: "Design",
         instructor: instructor._id,
         status: "approved",
-        thumbnailUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=600&auto=format&fit=crop"
+        thumbnailUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=600&auto=format&fit=crop",
+        lessons: [
+          "Design Thinking Fundamentals",
+          "Wireframing & Prototyping in Figma",
+          "Usability Testing & Iteration",
+        ],
       },
       {
         title: "Business Marketing",
@@ -61,13 +89,30 @@ const seedDatabase = async () => {
         category: "Business",
         instructor: instructor._id,
         status: "approved",
-        thumbnailUrl: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=600&auto=format&fit=crop"
-      }
+        thumbnailUrl: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=600&auto=format&fit=crop",
+        lessons: [
+          "Digital Marketing Fundamentals",
+          "Social Media Strategy",
+          "Content Marketing & SEO",
+          "Analytics & Growth Metrics",
+        ],
+      },
     ];
 
-    await Course.insertMany(courses);
-    console.log('Successfully seeded database with mock courses!');
-    
+    for (const { lessons, ...courseData } of courses) {
+      const course = await Course.create(courseData);
+      const lessonDocs = lessons.map((title, i) => ({
+        title,
+        videoUrl: SAMPLE_VIDEO_URLS[i % SAMPLE_VIDEO_URLS.length],
+        course: course._id,
+        order: i + 1,
+      }));
+      await Lesson.insertMany(lessonDocs);
+      console.log(`  - "${course.title}": ${lessonDocs.length} lessons`);
+    }
+
+    console.log('Successfully seeded database with mock courses and lessons!');
+
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);
