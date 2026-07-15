@@ -531,7 +531,7 @@ export default function AdminPortal({ user, onLogout }) {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {Object.entries(stats.categoryCounts).map(([cat, count]) => (
-                        <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                        <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--c-input-bg)', borderRadius: '8px' }}>
                           <span style={{ fontWeight: '500' }}>{cat}</span>
                           <span style={{ color: 'var(--c-orange)', fontWeight: 'bold' }}>{count} enrolled</span>
                         </div>
@@ -619,7 +619,7 @@ export default function AdminPortal({ user, onLogout }) {
                             </div>
                           )}
                         </div>
-                        <button type="submit" disabled={promotingSuperAdmin} className="glass-btn auth-submit-btn" style={{ background: 'var(--c-orange)', boxShadow: '0 4px 15px rgba(251, 146, 60, 0.4)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', width: '100%', margin: 0 }}>
+                        <button type="submit" disabled={promotingSuperAdmin} className="glass-btn auth-submit-btn" style={{ background: 'var(--c-orange)', boxShadow: '0 4px 15px rgba(251, 146, 60, 0.4)', color: '#fff', border: '1px solid var(--c-border-active)', width: '100%', margin: 0 }}>
                           {promotingSuperAdmin ? 'Assigning...' : 'Assign Super Admin'}
                         </button>
                       </form>
@@ -639,7 +639,7 @@ export default function AdminPortal({ user, onLogout }) {
 
                 <div className="glass-card" style={{ overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <thead style={{ background: 'var(--c-border-subtle)' }}>
                       <tr>
                         <th style={{ padding: '16px', fontWeight: '600', color: 'var(--c-sub)' }}>Name</th>
                         <th style={{ padding: '16px', fontWeight: '600', color: 'var(--c-sub)' }}>Email</th>
@@ -654,7 +654,7 @@ export default function AdminPortal({ user, onLogout }) {
                         <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-sub)' }}>No users found</td></tr>
                       ) : (
                         users.map(u => (
-                          <tr key={u._id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <tr key={u._id} style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
                             <td style={{ padding: '16px' }}>{u.name}</td>
                             <td style={{ padding: '16px', color: 'var(--c-sub)' }}>{u.email}</td>
                             <td style={{ padding: '16px', color: 'var(--c-sub)' }}>{u.phone || '-'}</td>
@@ -678,7 +678,7 @@ export default function AdminPortal({ user, onLogout }) {
                                   {u.role !== 'student' && (
                                     <button 
                                       onClick={() => handleDemote(u._id)}
-                                      style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer' }}
+                                      style={{ background: 'transparent', border: '1px solid var(--c-border-active)', padding: '6px 12px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer' }}
                                     >Demote</button>
                                   )}
                                   <button 
@@ -704,7 +704,7 @@ export default function AdminPortal({ user, onLogout }) {
                 <h2 style={{ fontSize: '1.8rem', margin: 0 }}>Financial Transactions</h2>
                 <div className="glass-card" style={{ overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <thead style={{ background: 'var(--c-border-subtle)' }}>
                       <tr>
                         <th style={{ padding: '16px', fontWeight: '600', color: 'var(--c-sub)' }}>Date</th>
                         <th style={{ padding: '16px', fontWeight: '600', color: 'var(--c-sub)' }}>Student</th>
@@ -717,7 +717,7 @@ export default function AdminPortal({ user, onLogout }) {
                         <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-sub)' }}>No transactions found</td></tr>
                       ) : (
                         transactions.map(t => (
-                          <tr key={t._id} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                          <tr key={t._id} style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
                             <td style={{ padding: '16px', color: 'var(--c-sub)' }}>{new Date(t.createdAt).toLocaleDateString()}</td>
                             <td style={{ padding: '16px' }}>{t.student?.name || 'Unknown User'}</td>
                             <td style={{ padding: '16px' }}>{t.course?.title || 'Unknown Course'}</td>

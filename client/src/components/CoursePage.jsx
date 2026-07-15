@@ -89,7 +89,7 @@ export default function CoursePage({ cart = [], setCart }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '32px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', gap: '32px', borderBottom: '1px solid var(--c-border-medium)', marginBottom: '32px' }}>
             <button
               className={`nav-tab ${activeTab === 'syllabus' ? 'active' : ''}`}
               onClick={() => setActiveTab('syllabus')}

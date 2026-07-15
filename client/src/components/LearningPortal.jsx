@@ -82,7 +82,7 @@ export default function LearningPortal() {
         className="learning-glass"
         style={{
           padding: "16px 24px",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          borderBottom: "1px solid var(--c-border-subtle)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -136,7 +136,7 @@ export default function LearningPortal() {
             style={{
               width: "200px",
               height: "6px",
-              background: "rgba(255,255,255,0.1)",
+              background: "var(--c-bg-hover)",
               borderRadius: "3px",
               overflow: "hidden",
             }}
@@ -238,7 +238,7 @@ export default function LearningPortal() {
               style={{
                 display: "flex",
                 gap: "24px",
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
+                borderBottom: "1px solid var(--c-border-medium)",
                 paddingBottom: "24px",
                 marginBottom: "24px",
               }}
@@ -374,7 +374,7 @@ export default function LearningPortal() {
                     width: "100%",
                     height: "150px",
                     background: "rgba(15, 17, 23, 0.7)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--c-border-medium)",
                     borderRadius: "8px",
                     padding: "16px",
                     color: "#fff",
@@ -392,18 +392,18 @@ export default function LearningPortal() {
           className="learning-glass"
           style={{
             width: "400px",
-            borderLeft: "1px solid rgba(255,255,255,0.05)",
+            borderLeft: "1px solid var(--c-border-subtle)",
             display: "flex",
             flexDirection: "column",
           }}
         >
           <div style={{ flex: 1, overflowY: "auto" }}>
-            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ borderBottom: "1px solid var(--c-border-subtle)" }}>
               <div
                 onClick={() => setIsCourseContentOpen(!isCourseContentOpen)}
                 style={{
                   padding: "16px 24px",
-                  background: "rgba(255,255,255,0.02)",
+                  background: "var(--c-bg-subtle)",
                   fontWeight: "600",
                   display: "flex",
                   justifyContent: "space-between",
@@ -479,7 +479,7 @@ export default function LearningPortal() {
                           borderRadius: "50%",
                           border: isCompleted
                             ? "none"
-                            : "2px solid rgba(255,255,255,0.2)",
+                            : "2px solid var(--c-border-active)",
                           background: isCompleted ? "#10B981" : "transparent",
                           display: "flex",
                           alignItems: "center",

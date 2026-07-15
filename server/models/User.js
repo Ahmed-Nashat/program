@@ -35,6 +35,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    university: { type: String, default: '' },
+    college: { type: String, default: '' },
+    year: { type: String, default: '' },
+    track: { type: String, default: '' },
+    providedCourses: { type: String, default: '' },
+    linkedinUrl: { type: String, default: '' },
+    socialUrl: { type: String, default: '' },
+    goalsText: { type: String, default: '' },
+    selectedPills: { type: [String], default: [] },
   },
   { timestamps: true }
 );

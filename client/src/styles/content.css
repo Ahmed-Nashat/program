@@ -2,7 +2,14 @@
     --c-border: 1px solid rgba(255, 255, 255, 0.05);
     --c-border-top: 1px solid rgba(255, 255, 255, 0.15);
     --c-border-left: 1px solid rgba(255, 255, 255, 0.15);
+    --c-border-subtle: rgba(255, 255, 255, 0.05);
+    --c-border-medium: rgba(255, 255, 255, 0.1);
+    --c-border-active: rgba(255, 255, 255, 0.2);
+    --c-bg-subtle: rgba(255, 255, 255, 0.02);
+    --c-bg-hover: rgba(255, 255, 255, 0.1);
     --c-input-bg: rgba(255, 255, 255, 0.03);
+    --c-primary: #4f46e5;
+    --c-primary-bg: rgba(79, 70, 229, 0.1);
     --c-orange: #FB923C;
     --c-purple: #8B5CF6;
     --c-yellow: #FBBF24;
@@ -18,6 +25,11 @@ body.light-mode {
     --c-border: 1px solid rgba(0, 0, 0, 0.1);
     --c-border-top: 1px solid rgba(0, 0, 0, 0.15);
     --c-border-left: 1px solid rgba(0, 0, 0, 0.15);
+    --c-border-subtle: rgba(0, 0, 0, 0.05);
+    --c-border-medium: rgba(0, 0, 0, 0.1);
+    --c-border-active: rgba(0, 0, 0, 0.2);
+    --c-bg-subtle: rgba(0, 0, 0, 0.02);
+    --c-bg-hover: rgba(0, 0, 0, 0.05);
     --c-input-bg: rgba(0, 0, 0, 0.03);
     --c-bg: #e5e7eb;
     --c-card: rgba(255, 255, 255, 0.7);
@@ -636,9 +648,9 @@ body.light-mode .progress-bar-container {
 .auth-wrapper {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding-top: 10vh;
-    min-height: 80vh;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
 }
 
 /* New Split Grid Layout */
@@ -648,7 +660,7 @@ body.light-mode .progress-bar-container {
     gap: 60px;
     width: 100%;
     max-width: 1200px;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .auth-left {
@@ -697,14 +709,51 @@ body.light-mode .progress-bar-container {
     justify-content: center;
 }
 
+.role-card {
+    flex: 1;
+    padding: 0.75rem;
+    border: var(--c-border);
+    border-top: var(--c-border-top);
+    border-left: var(--c-border-left);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--c-input-bg);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--c-sub);
+}
+
+.role-card:hover {
+    background: var(--c-bg-hover);
+    transform: translateY(-2px);
+}
+
+.role-card.selected {
+    border: 1px solid var(--c-orange);
+    background: rgba(251, 146, 60, 0.1);
+    color: var(--c-orange);
+    box-shadow: 0 4px 15px rgba(251, 146, 60, 0.15);
+}
+
+.role-card svg {
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+
+.role-card.selected svg {
+    color: var(--c-orange);
+    transform: scale(1.1);
+}
+
 .auth-card {
     width: 100%;
     max-width: 500px;
-    padding: 40px;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    gap: 12px;
 }
 
 .auth-header {
@@ -713,7 +762,7 @@ body.light-mode .progress-bar-container {
 }
 
 .auth-header h2 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     margin: 0 0 5px 0;
 }
 
@@ -777,7 +826,7 @@ body.light-mode .progress-bar-container {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     position: relative;
 }
 
@@ -804,23 +853,16 @@ body.light-mode .progress-bar-container {
 .step:not(:last-child)::after {
     content: '';
     position: absolute;
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15) 15%, rgba(255, 255, 255, 0.15) 85%, transparent);
     top: 20px;
     left: calc(50% + 24px);
     width: calc(100% - 48px);
     height: 2px;
-    margin-top: 13.5px;
-    margin-left: 1px;
-    width: 99.7px;
     z-index: 0;
 }
 
 body.light-mode .step:not(:last-child)::after {
-    background: rgba(0, 0, 0, 0.15);
-    margin-top: 13.5px;
-    margin-left: 1px;
-    width: 99.7px;
-    z-index: 0;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.15) 15%, rgba(0, 0, 0, 0.15) 85%, transparent);
 }
 
 .step:not(:last-child)::before {
@@ -830,15 +872,13 @@ body.light-mode .step:not(:last-child)::after {
     left: calc(50% + 24px);
     width: 0;
     height: 2px;
-    margin-top: 13.5px;
-    margin-left: 1px;
-    background: #4ade80;
+    background: linear-gradient(90deg, transparent, #4ade80 15%, #4ade80 85%, transparent);
     z-index: 1;
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .step.completed:not(:last-child)::before {
-    width: 99.7px;
+    width: calc(100% - 48px);
 }
 
 .step-icon {
@@ -855,8 +895,6 @@ body.light-mode .step:not(:last-child)::after {
     color: var(--c-sub);
     font-size: 1rem;
     transition: all 0.3s;
-    margin-top: 15px;
-    margin-left: 10px;
 }
 
 .step.completed .step-icon {
@@ -926,13 +964,13 @@ body.light-mode .step:not(:last-child)::after {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .step-content {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 /* Password Strength & Toggle */
@@ -1359,13 +1397,13 @@ body.light-mode .custom-select-dropdown {
 .input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 12px;
 }
 
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .input-group label {
@@ -1377,7 +1415,7 @@ body.light-mode .custom-select-dropdown {
 
 .input-group input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     background: var(--c-input-bg);
     border: var(--c-border);
     border-top: var(--c-border-top);
