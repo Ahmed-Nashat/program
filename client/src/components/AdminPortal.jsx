@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import logoDark from '../assets/logo-dark.png';
+import logoLight from '../assets/logo-light.png';
+
+const ROLE_OPTIONS = ['student', 'instructor', 'admin'];
 
 const AnimatedNumber = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -32,7 +36,7 @@ const AnimatedNumber = ({ value }) => {
   return <span>{displayValue}</span>;
 };
 
-export default function AdminPortal({ user, onLogout }) {
+export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard_overview');
   console.log("Admin Portal mounted with activeTab:", activeTab);
@@ -50,20 +54,11 @@ export default function AdminPortal({ user, onLogout }) {
   // Search
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Promote Admin State
-  const [promoteEmail, setPromoteEmail] = useState('');
-  const [promoteStatus, setPromoteStatus] = useState({ type: '', msg: '' });
-  const [promoting, setPromoting] = useState(false);
-
-  // Promote Instructor State
-  const [promoteInstructorEmail, setPromoteInstructorEmail] = useState('');
-  const [promoteInstructorStatus, setPromoteInstructorStatus] = useState({ type: '', msg: '' });
-  const [promotingInstructor, setPromotingInstructor] = useState(false);
-
-  // Promote Super Admin State
-  const [promoteSuperAdminEmail, setPromoteSuperAdminEmail] = useState('');
-  const [promoteSuperAdminStatus, setPromoteSuperAdminStatus] = useState({ type: '', msg: '' });
-  const [promotingSuperAdmin, setPromotingSuperAdmin] = useState(false);
+  // Change Role State
+  const [roleMenuUserId, setRoleMenuUserId] = useState(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState(null); // { id, name, newRole } | null
+  const [changingRole, setChangingRole] = useState(false);
+  const [roleChangeError, setRoleChangeError] = useState('');
 
   // Sidebar Dropdown State
   const [expandedGroup, setExpandedGroup] = useState('Dashboard');
@@ -156,72 +151,6 @@ export default function AdminPortal({ user, onLogout }) {
     }
   };
 
-  const handlePromote = async (e) => {
-    e.preventDefault();
-    if (!promoteEmail) return;
-    setPromoting(true);
-    setPromoteStatus({ type: '', msg: '' });
-    
-    try {
-      await api.patch('/auth/promote', { email: promoteEmail });
-      setPromoteStatus({ type: 'success', msg: `Successfully promoted ${promoteEmail} to admin!` });
-      setPromoteEmail('');
-      if (activeTab.startsWith('users')) fetchUsers(searchQuery);
-      
-      setTimeout(() => {
-        setPromoteStatus({ type: '', msg: '' });
-      }, 3000);
-    } catch (err) {
-      setPromoteStatus({ type: 'error', msg: err.response?.data?.message || 'Failed to promote user' });
-    } finally {
-      setPromoting(false);
-    }
-  };
-
-  const handlePromoteInstructor = async (e) => {
-    e.preventDefault();
-    if (!promoteInstructorEmail) return;
-    setPromotingInstructor(true);
-    setPromoteInstructorStatus({ type: '', msg: '' });
-    
-    try {
-      await api.patch('/auth/promote-instructor', { email: promoteInstructorEmail });
-      setPromoteInstructorStatus({ type: 'success', msg: `Successfully promoted ${promoteInstructorEmail} to instructor!` });
-      setPromoteInstructorEmail('');
-      if (activeTab.startsWith('users')) fetchUsers(searchQuery);
-      
-      setTimeout(() => {
-        setPromoteInstructorStatus({ type: '', msg: '' });
-      }, 3000);
-    } catch (err) {
-      setPromoteInstructorStatus({ type: 'error', msg: err.response?.data?.message || 'Failed to promote user to instructor' });
-    } finally {
-      setPromotingInstructor(false);
-    }
-  };
-
-  const handlePromoteSuperAdmin = async (e) => {
-    e.preventDefault();
-    if (!promoteSuperAdminEmail) return;
-    setPromotingSuperAdmin(true);
-    setPromoteSuperAdminStatus({ type: '', msg: '' });
-    
-    try {
-      await api.patch('/auth/promote-superadmin', { email: promoteSuperAdminEmail });
-      setPromoteSuperAdminStatus({ type: 'success', msg: `Successfully promoted ${promoteSuperAdminEmail} to superadmin!` });
-      setPromoteSuperAdminEmail('');
-      if (activeTab.startsWith('users')) fetchUsers(searchQuery);
-      
-      setTimeout(() => {
-        setPromoteSuperAdminStatus({ type: '', msg: '' });
-      }, 3000);
-    } catch (err) {
-      setPromoteSuperAdminStatus({ type: 'error', msg: err.response?.data?.message || 'Failed to promote user to superadmin' });
-    } finally {
-      setPromotingSuperAdmin(false);
-    }
-  };
-
   const handleToggleBlock = async (id) => {
     try {
       await api.patch(`/admin/users/${id}/block`);
@@ -231,14 +160,41 @@ export default function AdminPortal({ user, onLogout }) {
     }
   };
 
-  const handleDemote = async (id) => {
-    if(!window.confirm('Are you sure you want to demote this user to student?')) return;
+  // Opens the confirm modal — no request is sent until the user confirms.
+  const requestRoleChange = (u, newRole) => {
+    setRoleMenuUserId(null);
+    setRoleChangeError('');
+    setPendingRoleChange({ id: u._id, name: u.name, newRole });
+  };
+
+  const cancelRoleChange = () => {
+    setPendingRoleChange(null);
+    setRoleChangeError('');
+  };
+
+  const confirmRoleChange = async () => {
+    if (!pendingRoleChange) return;
+    setChangingRole(true);
+    setRoleChangeError('');
     try {
-      await api.patch(`/admin/users/${id}/demote`);
+      await api.patch(`/admin/users/${pendingRoleChange.id}/role`, { role: pendingRoleChange.newRole });
+      setPendingRoleChange(null);
       fetchUsers(searchQuery);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to demote user');
+      setRoleChangeError(err.response?.data?.message || 'Failed to change role');
+    } finally {
+      setChangingRole(false);
     }
+  };
+
+  // A row can have its role changed unless it's the acting user themselves,
+  // it's already a superadmin (untouchable via this UI), or it's an admin
+  // being acted on by anyone other than a superadmin.
+  const canChangeRole = (u) => {
+    if (u._id === user.id) return false;
+    if (u.role === 'superadmin') return false;
+    if (u.role === 'admin' && user.role !== 'superadmin') return false;
+    return true;
   };
 
   if (loading && !stats && !users.length && !transactions.length) {
@@ -366,7 +322,14 @@ export default function AdminPortal({ user, onLogout }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Top Navbar using top-nav styling */}
       <nav className="top-nav" style={{ position: 'relative', borderBottom:'1px solid rgba(255, 255, 255, 0.15)', zIndex: 10, display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <Link to="/student" style={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src={isLightMode ? `${logoLight}?v=3` : `${logoDark}?v=3`}
+              alt="Program Logo"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
+          </Link>
           <button onClick={() => navigate('/student')} className="nav-icon-btn" style={{ borderLeft:'1px solid rgba(255, 255, 255, 0.15)' , borderTop:'1px solid rgba(255, 255, 255, 0.15)', width: 'auto', padding: '0 12px', display: 'flex', gap: '8px', alignItems: 'center', borderRadius: '8px'}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             <span>Back to Student View</span>
@@ -375,7 +338,26 @@ export default function AdminPortal({ user, onLogout }) {
         <div className="nav-logo">
           <h1 style={{ fontSize: '1.2rem', margin: '0' }}>{user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal'}</h1>
         </div>
-        <div className="nav-controls">
+        <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
+          <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>
+            {isLightMode ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="4"></circle>
+                <line x1="12" y1="2" x2="12" y2="4"></line>
+                <line x1="12" y1="20" x2="12" y2="22"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="2" y1="12" x2="4" y2="12"></line>
+                <line x1="20" y1="12" x2="22" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+          </button>
           <div className="profile-wrapper">
             <div className="nav-avatar">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -522,6 +504,16 @@ export default function AdminPortal({ user, onLogout }) {
                     <div className="stat-label">Total Instructors</div>
                     <div className="stat-value"><AnimatedNumber value={stats.totalInstructors} /></div>
                   </div>
+                  <div className="glass-card stat-card">
+                    <div className="stat-label">Total Admins</div>
+                    <div className="stat-value"><AnimatedNumber value={stats.totalAdmins} /></div>
+                  </div>
+                  {user?.role === 'superadmin' && (
+                    <div className="glass-card stat-card">
+                      <div className="stat-label">Total Super Admins</div>
+                      <div className="stat-value"><AnimatedNumber value={stats.totalSuperAdmins} /></div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="glass-card" style={{ padding: '24px' }}>
@@ -548,85 +540,6 @@ export default function AdminPortal({ user, onLogout }) {
                   <h2 style={{ fontSize: '1.8rem', margin: 0 }}>User Management</h2>
                 </div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'superadmin' ? 'repeat(3, 1fr)' : '1fr 1fr', gap: '24px' }}>
-                  <div className="glass-card" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0' }}>Assign an Admin</h2>
-                    <form onSubmit={handlePromote} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div>
-                        <div className="input-group">
-                          <input 
-                            type="email" 
-                            placeholder="User's email address" 
-                            value={promoteEmail}
-                            onChange={(e) => setPromoteEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                        {promoteStatus.msg && (
-                          <div style={{ marginTop: '8px', fontSize: '0.9rem', color: promoteStatus.type === 'success' ? '#10B981' : '#ef4444' }}>
-                            {promoteStatus.msg}
-                          </div>
-                        )}
-                      </div>
-                      <button type="submit" disabled={promoting} className="glass-btn auth-submit-btn" style={{ width: '100%', margin: 0 }}>
-                        {promoting ? 'Promoting...' : 'Promote'}
-                      </button>
-                    </form>
-                  </div>
-
-                  <div className="glass-card" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0' }}>Assign an Instructor</h2>
-                    <form onSubmit={handlePromoteInstructor} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div>
-                        <div className="input-group">
-                          <input 
-                            type="email" 
-                            placeholder="User's email address" 
-                            value={promoteInstructorEmail}
-                            onChange={(e) => setPromoteInstructorEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                        {promoteInstructorStatus.msg && (
-                          <div style={{ marginTop: '8px', fontSize: '0.9rem', color: promoteInstructorStatus.type === 'success' ? '#10B981' : '#ef4444' }}>
-                            {promoteInstructorStatus.msg}
-                          </div>
-                        )}
-                      </div>
-                      <button type="submit" disabled={promotingInstructor} className="glass-btn auth-submit-btn" style={{ background: 'linear-gradient(135deg, var(--c-yellow), var(--c-orange))', width: '100%', margin: 0 }}>
-                        {promotingInstructor ? 'Assigning...' : 'Assign'}
-                      </button>
-                    </form>
-                  </div>
-
-                  {user?.role === 'superadmin' && (
-                    <div className="glass-card" style={{ padding: '24px' }}>
-                      <h2 style={{ fontSize: '1.2rem', margin: '0 0 16px 0' }}>Assign a Super Admin</h2>
-                      <form onSubmit={handlePromoteSuperAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div>
-                          <div className="input-group">
-                            <input 
-                              type="email" 
-                              placeholder="User's email address" 
-                              value={promoteSuperAdminEmail}
-                              onChange={(e) => setPromoteSuperAdminEmail(e.target.value)}
-                              required
-                            />
-                          </div>
-                          {promoteSuperAdminStatus.msg && (
-                            <div style={{ marginTop: '8px', fontSize: '0.9rem', color: promoteSuperAdminStatus.type === 'success' ? '#10B981' : '#ef4444' }}>
-                              {promoteSuperAdminStatus.msg}
-                            </div>
-                          )}
-                        </div>
-                        <button type="submit" disabled={promotingSuperAdmin} className="glass-btn auth-submit-btn" style={{ background: 'var(--c-orange)', boxShadow: '0 4px 15px rgba(251, 146, 60, 0.4)', color: '#fff', border: '1px solid var(--c-border-active)', width: '100%', margin: 0 }}>
-                          {promotingSuperAdmin ? 'Assigning...' : 'Assign Super Admin'}
-                        </button>
-                      </form>
-                    </div>
-                  )}
-                </div>
-
                 <div className="input-group">
                   <input 
                     type="text" 
@@ -672,23 +585,46 @@ export default function AdminPortal({ user, onLogout }) {
                                 {u.isBlocked ? 'Blocked' : 'Active'}
                               </span>
                             </td>
-                            <td style={{ padding: '16px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                              {u._id !== user.id && (
-                                <>
-                                  {u.role !== 'student' && (
-                                    <button 
-                                      onClick={() => handleDemote(u._id)}
-                                      style={{ background: 'transparent', border: '1px solid var(--c-border-active)', padding: '6px 12px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer' }}
-                                    >Demote</button>
-                                  )}
-                                  <button 
-                                    onClick={() => handleToggleBlock(u._id)}
-                                    style={{ background: u.isBlocked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${u.isBlocked ? '#10B981' : '#ef4444'}`, padding: '6px 12px', borderRadius: '6px', color: u.isBlocked ? '#10B981' : '#ef4444', cursor: 'pointer' }}
-                                  >
-                                    {u.isBlocked ? 'Unblock' : 'Block'}
-                                  </button>
-                                </>
-                              )}
+                            <td style={{ padding: '16px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', position: 'relative' }}>
+                                {u._id !== user.id && (
+                                  <>
+                                    {canChangeRole(u) && (
+                                      <div style={{ position: 'relative' }}>
+                                        <button
+                                          onClick={() => setRoleMenuUserId(roleMenuUserId === u._id ? null : u._id)}
+                                          style={{ background: 'transparent', border: '1px solid var(--c-border-active)', padding: '6px 12px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer' }}
+                                        >
+                                          Change Role
+                                        </button>
+                                        {roleMenuUserId === u._id && (
+                                          <div
+                                            className="glass-card"
+                                            style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, minWidth: '160px', padding: '6px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: '4px' }}
+                                          >
+                                            {ROLE_OPTIONS.filter(r => r !== u.role).map(r => (
+                                              <button
+                                                key={r}
+                                                onClick={() => requestRoleChange(u, r)}
+                                                className="hover-glow"
+                                                style={{ background: 'transparent', border: 'none', padding: '8px 10px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer', textAlign: 'left', textTransform: 'capitalize' }}
+                                              >
+                                                {r}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    <button
+                                      onClick={() => handleToggleBlock(u._id)}
+                                      style={{ background: u.isBlocked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${u.isBlocked ? '#10B981' : '#ef4444'}`, padding: '6px 12px', borderRadius: '6px', color: u.isBlocked ? '#10B981' : '#ef4444', cursor: 'pointer' }}
+                                    >
+                                      {u.isBlocked ? 'Unblock' : 'Block'}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -789,6 +725,28 @@ export default function AdminPortal({ user, onLogout }) {
           </div>
         </div>
       </div>
+
+      {/* Change Role confirmation modal */}
+      {pendingRoleChange && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-card animate-entrance" style={{ width: '100%', maxWidth: '420px', padding: '32px' }}>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.3rem' }}>Change role?</h2>
+            <p style={{ color: 'var(--c-sub)', margin: '0 0 24px 0' }}>
+              Change <strong style={{ color: 'var(--c-light)' }}>{pendingRoleChange.name}</strong>'s role to{' '}
+              <strong style={{ color: 'var(--c-light)', textTransform: 'capitalize' }}>{pendingRoleChange.newRole}</strong>?
+            </p>
+            {roleChangeError && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '0.9rem' }}>{roleChangeError}</div>}
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button type="button" onClick={cancelRoleChange} disabled={changingRole} className="glass-btn hover-glow" style={{ flex: 1 }}>
+                Cancel
+              </button>
+              <button type="button" onClick={confirmRoleChange} disabled={changingRole} className="glass-btn auth-submit-btn" style={{ flex: 1 }}>
+                {changingRole ? 'Changing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
