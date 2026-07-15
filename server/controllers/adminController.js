@@ -9,6 +9,8 @@ export const getStats = async (req, res) => {
   try {
     const totalStudents = await User.countDocuments({ role: 'student' });
     const totalInstructors = await User.countDocuments({ role: 'instructor' });
+    const totalAdmins = await User.countDocuments({ role: 'admin' });
+    const totalSuperAdmins = await User.countDocuments({ role: 'superadmin' });
 
     // Calculate total revenue and enrollments by category
     const enrollments = await Enrollment.find().populate('course');
@@ -26,6 +28,8 @@ export const getStats = async (req, res) => {
     res.status(200).json({
       totalStudents,
       totalInstructors,
+      totalAdmins,
+      totalSuperAdmins,
       totalRevenue,
       categoryCounts
     });
@@ -73,7 +77,7 @@ export const toggleBlockUser = async (req, res) => {
     }
     
     // Don't let an admin block themselves easily
-    if (user._id.toString() === req.user.id) {
+    if (user._id.toString() === req.user.id.toString()) {
       return res.status(400).json({ message: 'Cannot block yourself' });
     }
 
@@ -87,28 +91,47 @@ export const toggleBlockUser = async (req, res) => {
   }
 };
 
-// @route   PATCH /api/admin/users/:id/demote
-// @access  Private (Admin)
-export const demoteUser = async (req, res) => {
+const ASSIGNABLE_ROLES = ['student', 'instructor', 'admin'];
+
+// @route   PATCH /api/admin/users/:id/role
+// @access  Private (Admin, Superadmin)
+// Unified role-change endpoint — replaces the old separate promote/demote
+// actions. 'superadmin' is deliberately not an assignable role here: that
+// tier stays untouchable through this endpoint in either direction, and a
+// plain admin can't change another admin's role — only a superadmin can.
+export const changeUserRole = async (req, res) => {
   try {
     const { id } = req.params;
+    const { role } = req.body;
+
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
     const user = await User.findById(id);
-    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user._id.toString() === req.user.id) {
-      return res.status(400).json({ message: 'Cannot demote yourself' });
+    if (user._id.toString() === req.user.id.toString()) {
+      return res.status(400).json({ message: 'Cannot change your own role' });
     }
 
-    user.role = 'student';
+    if (user.role === 'superadmin') {
+      return res.status(403).json({ message: 'Cannot change a superadmin\'s role' });
+    }
+
+    if (user.role === 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Only superadmins can change another admin\'s role' });
+    }
+
+    user.role = role;
     await user.save();
 
-    res.status(200).json({ message: 'User demoted to student', user });
+    res.status(200).json({ message: `User's role changed to ${role}`, user });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error demoting user' });
+    res.status(500).json({ message: 'Server error changing user role' });
   }
 };
 

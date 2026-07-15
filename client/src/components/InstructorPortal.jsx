@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import logoDark from '../assets/logo-dark.png';
+import logoLight from '../assets/logo-light.png';
 
-export default function InstructorPortal({ user, onLogout }) {
+export default function InstructorPortal({ user, onLogout, toggleTheme, isLightMode }) {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,21 +114,59 @@ export default function InstructorPortal({ user, onLogout }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--c-bg)' }}>
       {/* Top Navbar */}
-      <div style={{ padding: '16px 24px', background: 'var(--c-card)', borderBottom: '1px solid var(--c-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <nav className="top-nav" style={{ position: 'relative', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <Link to="/student" style={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src={isLightMode ? `${logoLight}?v=3` : `${logoDark}?v=3`}
+              alt="Program Logo"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
+          </Link>
           <button onClick={() => navigate('/student')} style={{ background: 'transparent', border: 'none', color: 'var(--c-sub)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             <span style={{ marginLeft: '8px' }}>Back to Student View</span>
           </button>
         </div>
-        <div>
+        <div className="nav-logo">
           <h1 style={{ fontSize: '1.2rem', margin: '0' }}>Instructor Portal</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-           <span style={{ color: 'var(--c-sub)' }}>{user?.name}</span>
-           <button onClick={onLogout} className="glass-btn hover-glow" style={{ padding: '6px 12px', fontSize: '0.9rem', width: 'auto' }}>Logout</button>
+        <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
+          <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>
+            {isLightMode ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="4"></circle>
+                <line x1="12" y1="2" x2="12" y2="4"></line>
+                <line x1="12" y1="20" x2="12" y2="22"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="2" y1="12" x2="4" y2="12"></line>
+                <line x1="20" y1="12" x2="22" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+          </button>
+          <div className="profile-wrapper">
+            <div className="nav-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path>
+              </svg>
+            </div>
+            <div className="profile-tooltip">
+              <div className="tooltip-name">{user?.name || 'Instructor'}</div>
+              <hr className="tooltip-divider" />
+              <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>{user?.email}</div>
+              <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="tooltip-link logout-link">Log out</a>
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
 
       <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
