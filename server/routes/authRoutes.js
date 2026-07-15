@@ -1,9 +1,10 @@
 import express from 'express';
-import { register, login, logout, getMe, promoteToAdmin, promoteToInstructor, promoteToSuperAdmin } from '../controllers/authController.js';
+import { register, login, logout, getMe, promoteToAdmin, promoteToInstructor, promoteToSuperAdmin, checkEmail } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+router.post('/check-email', checkEmail);
 router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);

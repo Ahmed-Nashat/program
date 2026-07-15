@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import TopNav from './components/TopNav';
 import ExploreTab from './components/ExploreTab';
 import DashboardTab from './components/DashboardTab';
+import MyCoursesTab from './components/MyCoursesTab';
 import AuthPage from './components/AuthPage';
 import AdminAuthPage from './components/AdminAuthPage';
 import CoursePage from './components/CoursePage';
@@ -100,7 +101,13 @@ export default function App() {
   const handleLogin = (userData) => {
     setUser(userData);
     setIsAuthenticated(true);
-    navigate('/student');
+    if (userData.role === 'superadmin' || userData.role === 'admin') {
+      navigate('/admin');
+    } else if (userData.role === 'instructor') {
+      navigate('/instructor');
+    } else {
+      navigate('/student');
+    }
   };
 
   const handleLogout = async () => {
@@ -132,6 +139,7 @@ export default function App() {
   // Derive activeTab for the TopNav indicator based on the URL
   let activeTab = 'explore';
   if (location.pathname.includes('/dashboard')) activeTab = 'dashboard';
+  if (location.pathname.includes('/mycourses')) activeTab = 'mycourses';
 
   // The Learning Portal and Checkout Page have their own fullscreen layouts
   if (location.pathname.startsWith('/learn/') || location.pathname.startsWith('/checkout/') || location.pathname === '/instructor' || location.pathname === '/admin') {
@@ -177,6 +185,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/student" replace />} />
           <Route path="/student" element={<ExploreTab user={user} />} />
           <Route path="/student/dashboard" element={<DashboardTab />} />
+          <Route path="/student/mycourses" element={<MyCoursesTab />} />
           <Route path="/course/:id" element={<CoursePage cart={cart} setCart={setCart} />} />
         </Routes>
       </main>

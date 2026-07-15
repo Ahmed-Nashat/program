@@ -112,7 +112,7 @@ export default function InstructorPortal({ user, onLogout }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--c-bg)' }}>
       {/* Top Navbar */}
-      <div style={{ padding: '16px 24px', background: 'var(--c-card)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '16px 24px', background: 'var(--c-card)', borderBottom: '1px solid var(--c-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button onClick={() => navigate('/student')} style={{ background: 'transparent', border: 'none', color: 'var(--c-sub)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

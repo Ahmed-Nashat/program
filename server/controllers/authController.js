@@ -1,11 +1,29 @@
 import User from '../models/User.js';
 import generateTokenAndSetCookie from '../utils/generateToken.js';
 
+// @route   POST /api/auth/check-email
+// @access  Public
+export const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: 'This email is already exists' });
+    }
+    res.status(200).json({ message: 'Email is available' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error checking email', error: error.message });
+  }
+};
+
 // @route   POST /api/auth/register
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, phone } = req.body;
+    const { name, email, password, role, phone, university, college, year, track, providedCourses, linkedinUrl, socialUrl, goalsText, selectedPills } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -21,7 +39,10 @@ export const register = async (req, res) => {
     // created manually (e.g. directly in the DB or by another admin).
     const safeRole = role === 'instructor' ? 'instructor' : 'student';
 
-    const user = await User.create({ name, email, password, role: safeRole, phone: phone || '' });
+    const user = await User.create({ 
+      name, email, password, role: safeRole, phone: phone || '',
+      university, college, year, track, providedCourses, linkedinUrl, socialUrl, goalsText, selectedPills
+    });
 
     generateTokenAndSetCookie(res, user._id);
 

@@ -89,7 +89,7 @@ export default function CoursePage({ cart = [], setCart }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '32px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', gap: '32px', borderBottom: '1px solid var(--c-border-medium)', marginBottom: '32px' }}>
             <button
               className={`nav-tab ${activeTab === 'syllabus' ? 'active' : ''}`}
               onClick={() => setActiveTab('syllabus')}
@@ -136,7 +136,7 @@ export default function CoursePage({ cart = [], setCart }) {
             {enrollError && <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '8px' }}>{enrollError}</div>}
 
             {isEnrolled ? (
-              <button onClick={() => navigate(`/learn/${course._id}`)} className="glass-btn auth-submit-btn" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '12px', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.5)' }}>
+              <button onClick={() => navigate(`/learn/${course._id}`)} className="glass-btn auth-submit-btn" style={{ width: '100%', padding: '14px', fontSize: '1.1rem', cursor: 'pointer', marginBottom: '12px', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.5)', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}>
                 Go to Course
               </button>
             ) : (

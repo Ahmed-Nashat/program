@@ -70,7 +70,12 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
   // Step 2 Fields
   const [university, setUniversity] = useState('');
   const [otherUniversity, setOtherUniversity] = useState('');
+  const [college, setCollege] = useState('');
   const [year, setYear] = useState('');
+  const [track, setTrack] = useState('');
+  const [providedCourses, setProvidedCourses] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [socialUrl, setSocialUrl] = useState('');
   
   // Step 3 Fields
   const [goalsText, setGoalsText] = useState('');
@@ -135,9 +140,23 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
         setIsCreatingAccount(false);
       }
     } else {
-      if (registerStep < 3) {
-        setStepDirection('forward');
-        setRegisterStep(registerStep + 1);
+      const maxSteps = role === 'instructor' ? 2 : 3;
+      if (registerStep < maxSteps) {
+        if (registerStep === 1) {
+          setIsCreatingAccount(true);
+          try {
+            await api.post('/auth/check-email', { email });
+            setIsCreatingAccount(false);
+            setStepDirection('forward');
+            setRegisterStep(registerStep + 1);
+          } catch (err) {
+            setAuthError(err.response?.data?.message || 'Email already exists');
+            setIsCreatingAccount(false);
+          }
+        } else {
+          setStepDirection('forward');
+          setRegisterStep(registerStep + 1);
+        }
       } else {
         setIsOtpVerifying(true);
       }
@@ -149,7 +168,19 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
     setAuthError('');
     setIsCreatingAccount(true);
     try {
-      const response = await api.post('/auth/register', { name, email, password, role, phone });
+      const payload = {
+        name, email, password, role, phone,
+        university: university === 'Other' ? otherUniversity : university,
+        year,
+        college,
+        track,
+        providedCourses,
+        linkedinUrl,
+        socialUrl,
+        goalsText,
+        selectedPills
+      };
+      const response = await api.post('/auth/register', payload);
       onLoginSuccess(response.data.user);
     } catch (err) {
       setAuthError(err.response?.data?.message || 'Registration failed');
@@ -286,32 +317,30 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                   {/* Visual Step Indicator for Registration */}
                   <div className={`step-indicator ${stepDirection}`}>
                     <div className="step-line">
-                      <div className="step-progress" style={{ width: registerStep === 1 ? '0%' : registerStep === 2 ? '50%' : '100%' }}></div>
+                      <div className="step-progress" style={{ width: registerStep === 1 ? '0%' : (role === 'instructor' && registerStep === 2 ? '100%' : (registerStep === 2 ? '50%' : '100%')) }}></div>
                     </div>
                     
                     {renderStepIcon(1, 'Account', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>)}
-                    {renderStepIcon(2, 'Academic', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>)}
-                    {renderStepIcon(3, 'Vision', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>)}
+                    {renderStepIcon(2, role === 'instructor' ? 'Profile' : 'Academic', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>)}
+                    {role === 'student' && renderStepIcon(3, 'Vision', <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>)}
                   </div>
 
                   {/* Step 1: Account */}
                   {(!isLogin && registerStep === 1) && (
                     <div className="step-content animate-entrance">
-                      <div className="role-selection" style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem' }}>
+                      <div className="role-selection" style={{ display: 'flex', gap: '10px', marginBottom: '0.75rem' }}>
                         <div 
                           className={`role-card ${role === 'student' ? 'selected' : ''}`} 
                           onClick={() => setRole('student')}
-                          style={{ flex: 1, padding: '1rem', border: `2px solid ${role === 'student' ? '#4f46e5' : 'transparent'}`, borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: role === 'student' ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-secondary, rgba(255,255,255,0.05))' }}
                         >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', color: role === 'student' ? '#4f46e5' : 'currentColor' }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                           <div style={{ fontWeight: '600' }}>Student</div>
                         </div>
                         <div 
                           className={`role-card ${role === 'instructor' ? 'selected' : ''}`} 
                           onClick={() => setRole('instructor')}
-                          style={{ flex: 1, padding: '1rem', border: `2px solid ${role === 'instructor' ? '#4f46e5' : 'transparent'}`, borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: role === 'instructor' ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-secondary, rgba(255,255,255,0.05))' }}
                         >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '8px', color: role === 'instructor' ? '#4f46e5' : 'currentColor' }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                           <div style={{ fontWeight: '600' }}>Instructor</div>
                         </div>
                       </div>
@@ -354,45 +383,75 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                         </div>
                       )}
 
-                      <div className="input-row">
-                        <div className="input-group">
-                          <label>College / Faculty *</label>
-                          <div className="icon-input-wrapper">
-                            <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                            <input type="text" placeholder="e.g. Engineering" required />
+                      {role === 'student' ? (
+                        <>
+                          <div className="input-row">
+                            <div className="input-group">
+                              <label>College / Faculty *</label>
+                              <div className="icon-input-wrapper">
+                                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                                <input type="text" placeholder="e.g. Engineering" required value={college} onChange={(e) => setCollege(e.target.value)} />
+                              </div>
+                            </div>
+                            <div className="input-group">
+                              <label>Year / Level *</label>
+                              <CustomSelect 
+                                options={[
+                                  { value: '1', label: '1st Year' },
+                                  { value: '2', label: '2nd Year' },
+                                  { value: '3', label: '3rd Year' },
+                                  { value: '4', label: '4th Year' },
+                                  { value: '5', label: '5th Year' },
+                                  { value: 'Graduated', label: 'Graduated' }
+                                ]}
+                                value={year}
+                                onChange={setYear}
+                                placeholder="Select year"
+                                icon={<svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>}
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="input-group">
-                          <label>Year / Level *</label>
-                          <CustomSelect 
-                            options={[
-                              { value: '1', label: '1st Year' },
-                              { value: '2', label: '2nd Year' },
-                              { value: '3', label: '3rd Year' },
-                              { value: '4', label: '4th Year' },
-                              { value: '5', label: '5th Year' },
-                              { value: 'Graduated', label: 'Graduated' }
-                            ]}
-                            value={year}
-                            onChange={setYear}
-                            placeholder="Select year"
-                            icon={<svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>}
-                          />
-                        </div>
-                      </div>
 
-                      <div className="input-group">
-                        <label>Track / Specialization *</label>
-                        <div className="icon-input-wrapper">
-                          <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                          <input type="text" placeholder="e.g. Computer Science, AI, Full-Stack" required />
-                        </div>
-                      </div>
+                          <div className="input-group">
+                            <label>Track / Specialization *</label>
+                            <div className="icon-input-wrapper">
+                              <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                              <input type="text" placeholder="e.g. Computer Science, AI, Full-Stack" required value={track} onChange={(e) => setTrack(e.target.value)} />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="input-group">
+                            <label>Courses you provide *</label>
+                            <div className="icon-input-wrapper">
+                              <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                              <input type="text" placeholder="e.g. React, Node.js, Machine Learning" required value={providedCourses} onChange={(e) => setProvidedCourses(e.target.value)} />
+                            </div>
+                          </div>
+                          <div className="input-row">
+                            <div className="input-group">
+                              <label>LinkedIn Profile</label>
+                              <div className="icon-input-wrapper">
+                                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                                <input type="url" placeholder="linkedin.com/in/username" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} />
+                              </div>
+                            </div>
+                            <div className="input-group">
+                              <label>Other Social / Website</label>
+                              <div className="icon-input-wrapper">
+                                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <input type="url" placeholder="github.com/username" value={socialUrl} onChange={(e) => setSocialUrl(e.target.value)} />
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
                   {/* Step 3: Vision */}
-                  {registerStep === 3 && (
+                  {registerStep === 3 && role === 'student' && (
                     <div className="step-content animate-entrance">
                       <div className="vision-header">
                         <div className="vision-icon">
@@ -504,13 +563,13 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                   {isCreatingAccount ? (
                     <span className="spinner-wrapper">
                       <svg className="spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-                      Creating account...
+                      {!isLogin && registerStep === 1 ? 'Checking...' : 'Creating account...'}
                     </span>
                   ) : (
                     isLogin ? (
                       <>Sign In <svg className="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></>
                     ) : (
-                      registerStep === 3 ? 'Create Account 🎉' : (
+                      registerStep === (role === 'instructor' ? 2 : 3) ? 'Create Account' : (
                         <>Continue <svg className="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></>
                       )
                     )

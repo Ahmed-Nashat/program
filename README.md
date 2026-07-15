@@ -1,148 +1,115 @@
-# Program
-<img width="1600" height="1187" alt="Program Logo" src="https://github.com/user-attachments/assets/83ba4853-3f7d-45c8-bc92-02878d3a34bc" />
+# Full Stack Learning Management System (LMS)
+A comprehensive, modern, and aesthetically premium Learning Management System featuring multiple role-based portals, full-stack course management, secure authentication, and financial tracking.
 
-A MERN-stack e-learning platform where university students discover courses, watch video lessons, and track progress — instructors create courses, admins approve them before they go live.
-
-## Status
-
-Backend feature-complete (auth, courses, enrollment, video upload). Frontend wired end-to-end across all three user roles. Not yet deployed. See [Known Limitations](#known-limitations) before treating this as production-ready.
-
-## The three flows
-
-**Student** — Register → Browse/search courses → View details → Enroll → Watch video lessons → Mark lessons complete → See progress bar
-
-**Instructor** — Register → Dashboard → Create course (title, description, price, category, thumbnail) → Add lessons (title, video upload) → Submit for approval
-
-**Admin** — Login → Dashboard → See pending courses → Approve/reject → Course goes live on the public catalog
-
-## Tech stack
-
-- **Backend:** Node.js, Express, MongoDB + Mongoose
-- **Frontend:** React, Vite, Tailwind CSS v4, React Router
-- **Auth:** JWT stored in HTTP-only cookies (not localStorage — see [Security notes](#security-notes))
-- **Media:** Cloudinary (video + image), Multer (memory storage, streamed directly to Cloudinary)
-
-## Explicitly out of scope
-
-Payments (price is display-only), live chat, gamification, certificates, wishlist, mobile apps, advanced analytics, forgot-password flow.
+## 🌟 Core Architecture
+- **Frontend**: React + Vite
+- **Styling**: Pure CSS (Glassmorphism theme, dynamic gradients, responsive grids, custom scrollbars)
+- **Backend**: Node.js + Express
+- **Database**: MongoDB (Mongoose ORM)
+- **Authentication**: JWT (JSON Web Tokens) stored securely in HTTP-only cookies
 
 ---
 
-## Project structure
+## 🔐 User Roles & Permissions
+The system uses a strict hierarchy for access control.
+1. **Student (Default)**: Can browse courses, view course details, and enroll.
+2. **Instructor**: Can create courses, add lessons, and view their own financial analytics.
+3. **Admin**: Can manage users (block/unblock, demote), approve/reject pending courses, and view global financial transactions.
+4. **Super Admin**: Has all Admin privileges, plus the ability to assign new Admins, promote Instructors, and access the massive, nested system management sidebar.
 
-```
-server/
-  models/         User, Course, Lesson, Enrollment (Mongoose schemas)
-  controllers/    Route handler logic
-  routes/         Express route definitions
-  middleware/     authMiddleware (protect/authorize), optionalAuth, upload (multer)
-  config/         db.js, cloudinary.js
-  utils/          JWT cookie helper
-  app.js          Express app definition (no listen/DB connect — testable)
-  server.js       Boots app.js + DB connection
-  test-integration.js   End-to-end test against a real in-memory MongoDB
+---
 
-client/src/
-  api/            axios instance + courses/enrollments/upload API modules
-  context/        AuthContext (global user state)
-  components/     Navbar, SidebarLayout, ProtectedRoute, StatusBadge
-  pages/          Landing, Login, Register, Dashboard, BrowseCourses,
-                  CourseDetails, LessonPlayer
-  pages/student/  MyLearning
-  pages/instructor/  InstructorDashboard, CreateCourse, ManageCourse
-  pages/admin/    AdminDashboard
-```
+## 🎨 UI/UX Highlights
+- **Glassmorphism Design**: Frosted glass cards `backdrop-filter: blur()`, glowing borders, and modern transparency.
+- **Dynamic Micro-Animations**: Buttons glow on hover, odometer animations for numbers (like Total Revenue), smooth page transitions.
+- **Responsive Navigation**: Top navigation bars morph seamlessly, custom SVG icons.
+- **Beautiful Toasts & Alerts**: Success and error messages are clearly styled for the user.
 
-## Data models
+---
 
-- **User** — name, email, password (bcrypt-hashed), role (`student` / `instructor` / `admin`). Admin role is never assignable through public registration — must be seeded directly in the database.
-- **Course** — title, description, price, category, instructor (ref), status (`pending` / `approved` / `rejected`), thumbnailUrl
-- **Lesson** — title, videoUrl, course (ref), order (auto-numbered)
-- **Enrollment** — student (ref), course (ref), completedLessons (array of Lesson refs). Unique compound index on (student, course) prevents duplicate enrollment at the database level.
+## 👨‍🎓 Student Portal (Learning Portal)
+- **Dynamic Hero Section**: Welcomes the user with a gradient title and call to action.
+- **Course Catalog (Explore Tab)**: Displays all `Approved` courses with thumbnails, titles, prices, and instructor names.
+- **Search Functionality**: Real-time searching of courses by title or category.
+- **Course Detail View**: See course description, total duration, number of lessons, and instructor details.
+- **Checkout Flow**: 
+  - Simulated payment gateway.
+  - Generates secure `Enrollment` database entries linking the Student and Course.
+  - Odometer animation when payment is successful.
+- **Dashboard Tab**: 
+  - Shows the student's actively enrolled courses.
+  - Tracks total amount spent by the student.
 
-## API reference
+---
 
-All routes are prefixed `/api`. Routes marked 🔒 require a valid auth cookie; role restrictions noted in parentheses.
+## 👨‍🏫 Instructor Portal
+- **Financial Dashboard**: 
+  - Real-time total revenue calculation (only for the instructor's specific courses).
+  - Number of enrolled students per course.
+- **Course Creation Studio**:
+  - Form to create new courses (Title, Category, Price, Description, Thumbnail URL).
+  - All new courses default to `Pending` status until approved by an Admin.
+- **Curriculum Builder**:
+  - Ability to add new Lessons (Title, Video URL, Content/Text, Duration) to their own courses.
+- **Course Status Badges**: Instructors can see if their courses are `Pending`, `Approved`, or `Rejected`.
 
-**Auth**
+---
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/auth/register` | Create account (student or instructor only) |
-| POST | `/auth/login` | Log in, sets JWT cookie |
-| POST | `/auth/logout` | Clears cookie |
-| GET | `/auth/me` 🔒 | Returns current user |
+## 🛡️ Admin Portal
+- **Global Dashboard**:
+  - Animated odometers displaying Global Total Revenue, Total Students, and Total Instructors.
+  - Breakdown of enrollments grouped by Category.
+- **User Management**:
+  - Search any user by name, email, or phone.
+  - Instantly **Block/Unblock** users (restricts access).
+  - **Demote** Instructors back to Students.
+  - Visual badges indicating User Role and Account Status.
+- **Course Moderation**:
+  - View all courses awaiting approval.
+  - Approve courses (makes them visible to students).
+  - Reject courses (prevents them from going live).
+- **Financial Transactions**:
+  - Read-only ledger of all purchases across the entire platform (Date, Student Name, Course, Revenue).
 
-**Courses**
+---
 
-| Method | Route | Description |
-|---|---|---|
-| GET | `/courses` | Public catalog — approved only, supports `?search=` and `?category=` |
-| GET | `/courses/:id` | Course details + lesson titles (videoUrl excluded — see below) |
-| POST | `/courses` 🔒 instructor | Create course (status defaults to `pending`) |
-| GET | `/courses/mine` 🔒 instructor | List own courses, any status |
-| POST | `/courses/:courseId/lessons` 🔒 instructor | Add a lesson (must own the course) |
-| GET | `/courses/:courseId/lessons/:lessonId` 🔒 | Returns lesson **with** videoUrl — requires enrollment, ownership, or admin |
-| GET | `/courses/pending` 🔒 admin | List pending courses |
-| PATCH | `/courses/:id/approve` 🔒 admin | Approve a course |
-| PATCH | `/courses/:id/reject` 🔒 admin | Reject a course |
+## 👑 Super Admin Portal
+*Accessible only via direct database upgrade or promotion by another Super Admin.*
+- **Expanded Navigation Sidebar**: 
+  - Massive, fully collapsible nested sidebar featuring categories like *Course Management, Certificate Management, Website Management, Announcements, System Settings*, and more.
+- **Role Assignment Forms**:
+  - Form to instantly promote any user to an **Instructor** via email.
+  - Form to instantly promote any user to an **Admin** via email.
+  - Built-in safety checks prevent accidentally demoting or blocking yourself.
 
-**Enrollment**
+---
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/enrollments/:courseId` 🔒 student | Enroll (rejects duplicates with 409) |
-| GET | `/enrollments/:courseId` 🔒 | Enrollment status + progress % |
-| GET | `/enrollments/mine` 🔒 student | All enrollments with computed progress |
-| PATCH | `/enrollments/:courseId/lessons/:lessonId/complete` 🔒 student | Mark lesson complete (idempotent) |
+## ⚙️ Backend API Routes
+### Authentication (`/api/auth`)
+- `POST /register`: Creates a new user, hashes password, sets JWT cookie.
+- `POST /login`: Verifies credentials, sets JWT cookie.
+- `POST /logout`: Clears JWT cookie.
+- `GET /me`: Returns current logged-in user profile.
+- `PATCH /promote`: (Super Admin only) Promotes user to Admin.
+- `PATCH /promote-instructor`: (Admin/Super Admin) Promotes user to Instructor.
 
-**Uploads**
+### Courses (`/api/courses`)
+- `GET /`: Returns all approved courses (Public).
+- `GET /:id`: Returns course details.
+- `POST /`: (Instructor) Creates a pending course.
+- `GET /mine`: (Instructor) Returns courses owned by the user.
+- `POST /:courseId/lessons`: (Instructor) Adds a lesson.
+- `GET /pending`: (Admin) Returns all unapproved courses.
+- `PATCH /:id/approve`: (Admin) Approves a course.
+- `PATCH /:id/reject`: (Admin) Rejects a course.
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/uploads/video` 🔒 instructor | Stream video to Cloudinary (500MB limit), returns URL |
-| POST | `/uploads/image` 🔒 instructor | Stream image to Cloudinary (5MB limit), returns URL |
+### Enrollments (`/api/enrollments`)
+- `POST /`: Creates a transaction and enrolls the user.
+- `GET /mine`: Returns courses the current student has purchased.
 
-## Security notes
-
-- JWT lives in an **HTTP-only cookie**, not localStorage — invisible to JavaScript, mitigating XSS token theft. `secure: true` and `sameSite: 'none'` are enforced in production for the cross-origin Render/Vercel setup.
-- **Lesson video URLs are never exposed publicly.** `/courses/:id` deliberately strips `videoUrl` from its response; only the gated `/courses/:courseId/lessons/:lessonId` endpoint returns it, and only to an enrolled student, the owning instructor, or an admin.
-- Enrollment double-submission is prevented at the **database level** (unique index), not just application logic, so it's race-condition-safe.
-- `markLessonComplete` uses `$addToSet`, so repeated calls never duplicate progress.
-- Admin accounts cannot be created through the public register endpoint under any input — must be seeded directly in MongoDB.
-
-## Setup
-
-**Backend**
-```bash
-cd server
-cp .env.example .env   # fill in MongoDB Atlas URI, JWT secret, Cloudinary credentials
-npm install
-npm run dev             # http://localhost:5000
-```
-
-**Frontend**
-```bash
-cd client
-cp .env.example .env.local   # defaults already point to localhost
-npm install
-npm run dev                   # http://localhost:5173
-```
-
-**Integration test** (real assertions against an in-memory MongoDB — register, create course, enroll, block unauthorized access, approve, verify progress tracking):
-```bash
-cd server
-node test-integration.js
-```
-
-## Known limitations
-
-- **Integration test and Cloudinary uploads have not been executed end-to-end by the person deploying this** — the development sandbox this was built in has no network access to `mongodb.org` or `api.cloudinary.com`. The code is correct against both services' documented APIs and passes every static/build check available, but running `test-integration.js` yourself, and doing one real video upload, are the two remaining acceptance checks before calling this done.
-- Not yet deployed. CORS origin and cookie `sameSite`/`secure` settings are pre-configured for a cross-origin Render (backend) + Vercel (frontend) setup, but untested against real production domains.
-- No rate limiting, no automated security audit pass.
-- Frontend visual design (colors, custom CSS classes like `.auth-card`, `.dash-card`) was partially reconstructed where the original theme file was missing — confirm it matches actual intended design.
-- No forgot-password flow (link exists in the UI, not wired to anything).
-
-## History
-
-`MERGE_NOTES.md` documents the specific file-by-file provenance of the frontend/backend merge (what came from the friend's build vs. reconstructed), for reference.
+### Admin (`/api/admin`)
+- `GET /stats`: Aggregates global financials and user counts.
+- `GET /users`: Fetches users with regex search.
+- `PATCH /users/:id/block`: Toggles user access.
+- `PATCH /users/:id/demote`: Resets user to Student.
+- `GET /transactions`: Lists all enrollments globally.
