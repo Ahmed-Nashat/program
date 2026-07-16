@@ -7,8 +7,9 @@ import logoLight from '../assets/logo-light.png';
 export default function InstructorPortal({ user, onLogout, toggleTheme, isLightMode }) {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [lessonsByCourse, setLessonsByCourse] = useState({});
   const [loading, setLoading] = useState(true);
-  
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
@@ -17,8 +18,8 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
   // Form states
   const [formData, setFormData] = useState({ title: '', description: '', price: '', category: '' });
   const [thumbnailFile, setThumbnailFile] = useState(null);
-  
-  const [lessonData, setLessonData] = useState({ title: '', order: '' });
+
+  const [lessonData, setLessonData] = useState({ title: '' });
   const [videoFile, setVideoFile] = useState(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -27,7 +28,22 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
   const fetchMyCourses = async () => {
     try {
       const res = await api.get('/courses/mine');
-      setCourses(res.data.courses || []);
+      const myCourses = res.data.courses || [];
+      setCourses(myCourses);
+
+      // The owner-gated GET /api/courses/:id already returns { course, lessons },
+      // so we can show real lesson visibility without any backend changes.
+      const lessonEntries = await Promise.all(
+        myCourses.map(async (c) => {
+          try {
+            const detail = await api.get(`/courses/${c._id}`);
+            return [c._id, detail.data.lessons || []];
+          } catch {
+            return [c._id, []];
+          }
+        })
+      );
+      setLessonsByCourse(Object.fromEntries(lessonEntries));
     } catch (err) {
       console.error(err);
     } finally {
@@ -94,12 +110,11 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
       
       await api.post(`/courses/${selectedCourseId}/lessons`, {
         title: lessonData.title,
-        order: Number(lessonData.order),
         videoUrl: uploadRes.data.url
       });
-      
+
       setShowLessonModal(false);
-      setLessonData({ title: '', order: '' });
+      setLessonData({ title: '' });
       setVideoFile(null);
       fetchMyCourses();
     } catch (err) {
@@ -173,7 +188,7 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
             <h2 style={{ fontSize: '2rem', margin: 0 }}>My Courses</h2>
-            <button onClick={() => setShowCreateModal(true)} className="glass-btn auth-submit-btn" style={{ width: 'auto', padding: '12px 24px' }}>
+            <button onClick={() => { setError(''); setShowCreateModal(true); }} className="glass-btn auth-submit-btn" style={{ width: 'auto', padding: '12px 24px' }}>
               + Create New Course
             </button>
           </div>
@@ -184,41 +199,64 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
                 You haven't created any courses yet.
               </div>
             ) : (
-              courses.map(course => (
-                <div key={course._id} className="glass-card hover-glow" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                    {course.thumbnailUrl ? (
-                      <img src={course.thumbnailUrl} alt={course.title} style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-                    ) : (
-                      <div style={{ width: '120px', height: '80px', background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', borderRadius: '8px' }}></div>
-                    )}
-                    <div>
-                      <h3 style={{ fontSize: '1.3rem', margin: '0 0 8px 0' }}>{course.title}</h3>
-                      <div style={{ color: 'var(--c-sub)', fontSize: '0.95rem' }}>Price: EGP {course.price} • Category: {course.category}</div>
-                      <div style={{ marginTop: '8px' }}>
-                        <span style={{ 
-                          padding: '4px 8px', 
-                          borderRadius: '4px', 
-                          fontSize: '0.8rem', 
-                          fontWeight: 'bold',
-                          background: course.status === 'approved' ? 'rgba(16, 185, 129, 0.2)' : course.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                          color: course.status === 'approved' ? '#10B981' : course.status === 'rejected' ? '#ef4444' : '#F59E0B'
-                        }}>
-                          {course.status.toUpperCase()}
-                        </span>
+              courses.map(course => {
+                const lessons = lessonsByCourse[course._id] || [];
+                return (
+                <div key={course._id} className="glass-card hover-glow" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                      {course.thumbnailUrl ? (
+                        <img src={course.thumbnailUrl} alt={course.title} style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+                      ) : (
+                        <div style={{ width: '120px', height: '80px', background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', borderRadius: '8px' }}></div>
+                      )}
+                      <div>
+                        <h3 style={{ fontSize: '1.3rem', margin: '0 0 8px 0' }}>{course.title}</h3>
+                        <div style={{ color: 'var(--c-sub)', fontSize: '0.95rem' }}>Price: EGP {course.price} • Category: {course.category}</div>
+                        <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            background: course.status === 'approved' ? 'rgba(16, 185, 129, 0.2)' : course.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                            color: course.status === 'approved' ? '#10B981' : course.status === 'rejected' ? '#ef4444' : '#F59E0B'
+                          }}>
+                            {course.status.toUpperCase()}
+                          </span>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--c-sub)' }}>
+                            {lessons.length === 0 ? 'No lessons yet' : `${lessons.length} lesson${lessons.length === 1 ? '' : 's'}`}
+                          </span>
+                        </div>
+                        {course.status === 'rejected' && course.rejectionReason && (
+                          <div style={{ marginTop: '8px', padding: '10px 12px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--c-sub)', maxWidth: '480px' }}>
+                            <span style={{ color: '#ef4444', fontWeight: 600 }}>Reason: </span>
+                            {course.rejectionReason}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <button 
-                      onClick={() => { setSelectedCourseId(course._id); setShowLessonModal(true); }}
+                    <button
+                      onClick={() => { setError(''); setSelectedCourseId(course._id); setShowLessonModal(true); }}
                       className="glass-btn hover-glow" style={{ padding: '8px 16px', fontSize: '0.95rem' }}
                     >
                       + Add Lesson
                     </button>
                   </div>
+
+                  {lessons.length > 0 && (
+                    <div style={{ borderTop: '1px solid var(--c-border-subtle)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {lessons.map(lesson => (
+                        <div key={lesson._id} style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '0.9rem', color: 'var(--c-sub)' }}>
+                          <span style={{ minWidth: '20px', color: 'var(--c-light)', fontWeight: 600 }}>{lesson.order}.</span>
+                          <span>{lesson.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -283,10 +321,7 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
               <div className="auth-input-group">
                 <label>Lesson Title</label>
                 <input required type="text" value={lessonData.title} onChange={e => setLessonData({...lessonData, title: e.target.value})} className="auth-input" placeholder="e.g. Introduction to State" />
-              </div>
-              <div className="auth-input-group">
-                <label>Order Number</label>
-                <input required type="number" min="1" value={lessonData.order} onChange={e => setLessonData({...lessonData, order: e.target.value})} className="auth-input" placeholder="e.g. 1" />
+                <div style={{ fontSize: '0.8rem', color: 'var(--c-sub)', marginTop: '4px' }}>Lessons are numbered automatically in the order you add them.</div>
               </div>
               <div className="auth-input-group">
                 <label>Video File</label>
