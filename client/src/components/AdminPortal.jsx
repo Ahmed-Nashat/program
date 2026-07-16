@@ -1,10 +1,77 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import logoDark from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
 
 const ROLE_OPTIONS = ['student', 'instructor', 'admin'];
+
+// Renders its content into document.body and positions it with `fixed`
+// coordinates measured from the trigger element. This is required because the
+// dropdown's trigger lives inside table/card containers that use `overflow`
+// for their own layout (scroll panes, rounded-corner clipping, etc.) — any
+// CSS `overflow` other than `visible` on an ancestor clips absolutely
+// positioned descendants regardless of z-index, so no z-index value can make
+// an in-place dropdown escape that clipping. Rendering outside the DOM
+// subtree via a portal is the only robust fix.
+const RoleMenu = ({ anchorEl, onClose, children }) => {
+  const menuRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  useEffect(() => {
+    if (!anchorEl) return;
+    const updateCoords = () => {
+      const rect = anchorEl.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    };
+    updateCoords();
+    // capture: true catches scroll events from any scrollable ancestor
+    // (e.g. the dashboard's scrollable content pane), not just window scroll.
+    window.addEventListener('scroll', updateCoords, true);
+    window.addEventListener('resize', updateCoords);
+    return () => {
+      window.removeEventListener('scroll', updateCoords, true);
+      window.removeEventListener('resize', updateCoords);
+    };
+  }, [anchorEl]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        anchorEl && !anchorEl.contains(e.target)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [anchorEl, onClose]);
+
+  if (!coords) return null;
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      className="glass-card animate-entrance"
+      style={{
+        position: 'fixed',
+        top: coords.top,
+        right: coords.right,
+        minWidth: '160px',
+        padding: '6px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px'
+      }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+};
 
 const AnimatedNumber = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -56,6 +123,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
 
   // Change Role State
   const [roleMenuUserId, setRoleMenuUserId] = useState(null);
+  const roleButtonRefs = useRef({});
   const [pendingRoleChange, setPendingRoleChange] = useState(null); // { id, name, newRole } | null
   const [changingRole, setChangingRole] = useState(false);
   const [roleChangeError, setRoleChangeError] = useState('');
@@ -319,7 +387,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div data-role={user?.role} style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Top Navbar using top-nav styling */}
       <nav className="top-nav" style={{ position: 'relative', borderBottom:'1px solid rgba(255, 255, 255, 0.15)', zIndex: 10, display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -336,7 +404,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
           </button>
         </div>
         <div className="nav-logo">
-          <h1 style={{ fontSize: '1.2rem', margin: '0' }}>{user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal'}</h1>
+          <h1 className="role-text" style={{ fontSize: '1.2rem', margin: '0' }}>{user?.role === 'superadmin' ? 'Super Admin Portal' : 'Admin Portal'}</h1>
         </div>
         <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
           <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>
@@ -368,7 +436,6 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
             <div className="profile-tooltip">
               <div className="tooltip-name">{user?.name}</div>
               <hr className="tooltip-divider" />
-              <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>Role: {user?.role}</div>
               <a href="#" className="tooltip-link">Profile</a>
               <a href="#" className="tooltip-link">Settings</a>
               <hr className="tooltip-divider" />
@@ -434,9 +501,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
                       height: '42px',
                       top: `${group.items.findIndex(t => t.id === activeTab) * 46}px`,
                       background: 'var(--c-input-bg)',
-                      border: 'var(--c-border)',
-                      borderTop: 'var(--c-border-top)',
-                      borderLeft: 'var(--c-border-left)',
+                      border: '1px solid var(--role-color, var(--c-orange))',
                       borderRadius: '12px',
                       transition: 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       pointerEvents: 'none',
@@ -457,7 +522,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
                       background: 'transparent',
                       border: '1px solid transparent',
                       borderRadius: '12px',
-                      color: activeTab === tab.id ? '#fff' : 'var(--c-sub)',
+                      color: activeTab === tab.id ? 'var(--role-color, #fff)' : 'var(--c-sub)',
                       cursor: 'pointer',
                       fontWeight: activeTab === tab.id ? '600' : '500',
                       transition: 'all 0.2s',
@@ -491,27 +556,27 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                   <div className="glass-card stat-card">
-                    <div className="stat-label">Total Revenue</div>
+                    <div className="stat-label">Revenue <span style={{ fontWeight: 400, textTransform: 'none', opacity: 0.8 }}>(Company Share)</span></div>
                     <div className="stat-value" style={{ color: '#10B981', background: 'none', WebkitTextFillColor: 'initial' }}>
                       EGP <AnimatedNumber value={stats.totalRevenue} />
                     </div>
                   </div>
-                  <div className="glass-card stat-card">
-                    <div className="stat-label">Total Students</div>
-                    <div className="stat-value"><AnimatedNumber value={stats.totalStudents} /></div>
+                  <div className="glass-card stat-card" data-role="student">
+                    <div className="stat-label">Students</div>
+                    <div className="stat-value role-text"><AnimatedNumber value={stats.totalStudents} /></div>
                   </div>
-                  <div className="glass-card stat-card">
-                    <div className="stat-label">Total Instructors</div>
-                    <div className="stat-value"><AnimatedNumber value={stats.totalInstructors} /></div>
+                  <div className="glass-card stat-card" data-role="instructor">
+                    <div className="stat-label">Instructors</div>
+                    <div className="stat-value role-text"><AnimatedNumber value={stats.totalInstructors} /></div>
                   </div>
-                  <div className="glass-card stat-card">
-                    <div className="stat-label">Total Admins</div>
-                    <div className="stat-value"><AnimatedNumber value={stats.totalAdmins} /></div>
+                  <div className="glass-card stat-card" data-role="admin">
+                    <div className="stat-label">Admins</div>
+                    <div className="stat-value role-text"><AnimatedNumber value={stats.totalAdmins} /></div>
                   </div>
                   {user?.role === 'superadmin' && (
-                    <div className="glass-card stat-card">
-                      <div className="stat-label">Total Super Admins</div>
-                      <div className="stat-value"><AnimatedNumber value={stats.totalSuperAdmins} /></div>
+                    <div className="glass-card stat-card" data-role="superadmin">
+                      <div className="stat-label">Super Admins</div>
+                      <div className="stat-value role-text"><AnimatedNumber value={stats.totalSuperAdmins} /></div>
                     </div>
                   )}
                 </div>
@@ -567,18 +632,12 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
                         <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: 'var(--c-sub)' }}>No users found</td></tr>
                       ) : (
                         users.map(u => (
-                          <tr key={u._id} style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
+                          <tr key={u._id} data-role={u.role} className="role-row" style={{ borderTop: '1px solid var(--c-border-subtle)' }}>
                             <td style={{ padding: '16px' }}>{u.name}</td>
                             <td style={{ padding: '16px', color: 'var(--c-sub)' }}>{u.email}</td>
                             <td style={{ padding: '16px', color: 'var(--c-sub)' }}>{u.phone || '-'}</td>
                             <td style={{ padding: '16px' }}>
-                              <span style={{ 
-                                padding: '4px 8px', borderRadius: '12px', fontSize: '0.8rem',
-                                background: u.role === 'superadmin' ? 'rgba(239, 68, 68, 0.2)' : u.role === 'admin' ? 'rgba(139, 92, 246, 0.2)' : u.role === 'instructor' ? 'rgba(251, 146, 60, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                                color: u.role === 'superadmin' ? '#ef4444' : u.role === 'admin' ? '#a78bfa' : u.role === 'instructor' ? '#fb923c' : 'var(--c-sub)'
-                              }}>
-                                {u.role}
-                              </span>
+                              <span className="role-badge">{u.role}</span>
                             </td>
                             <td style={{ padding: '16px' }}>
                               <span style={{ color: u.isBlocked ? '#ef4444' : '#10B981', fontSize: '0.9rem' }}>
@@ -590,29 +649,31 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
                                 {u._id !== user.id && (
                                   <>
                                     {canChangeRole(u) && (
-                                      <div style={{ position: 'relative' }}>
+                                      <div>
                                         <button
+                                          ref={(el) => { roleButtonRefs.current[u._id] = el; }}
                                           onClick={() => setRoleMenuUserId(roleMenuUserId === u._id ? null : u._id)}
                                           style={{ background: 'transparent', border: '1px solid var(--c-border-active)', padding: '6px 12px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer' }}
                                         >
                                           Change Role
                                         </button>
                                         {roleMenuUserId === u._id && (
-                                          <div
-                                            className="glass-card"
-                                            style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, minWidth: '160px', padding: '6px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: '4px' }}
+                                          <RoleMenu
+                                            anchorEl={roleButtonRefs.current[u._id]}
+                                            onClose={() => setRoleMenuUserId(null)}
                                           >
                                             {ROLE_OPTIONS.filter(r => r !== u.role).map(r => (
                                               <button
                                                 key={r}
+                                                data-role={r}
                                                 onClick={() => requestRoleChange(u, r)}
-                                                className="hover-glow"
-                                                style={{ background: 'transparent', border: 'none', padding: '8px 10px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer', textAlign: 'left', textTransform: 'capitalize' }}
+                                                className="role-option"
+                                                style={{ background: 'transparent', border: '1px solid transparent', padding: '8px 10px', borderRadius: '6px', color: 'var(--c-light)', cursor: 'pointer', textAlign: 'left', textTransform: 'capitalize' }}
                                               >
                                                 {r}
                                               </button>
                                             ))}
-                                          </div>
+                                          </RoleMenu>
                                         )}
                                       </div>
                                     )}
@@ -733,7 +794,7 @@ export default function AdminPortal({ user, onLogout, toggleTheme, isLightMode }
             <h2 style={{ margin: '0 0 12px 0', fontSize: '1.3rem' }}>Change role?</h2>
             <p style={{ color: 'var(--c-sub)', margin: '0 0 24px 0' }}>
               Change <strong style={{ color: 'var(--c-light)' }}>{pendingRoleChange.name}</strong>'s role to{' '}
-              <strong style={{ color: 'var(--c-light)', textTransform: 'capitalize' }}>{pendingRoleChange.newRole}</strong>?
+              <strong data-role={pendingRoleChange.newRole} className="role-text" style={{ textTransform: 'capitalize' }}>{pendingRoleChange.newRole}</strong>?
             </p>
             {roleChangeError && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '0.9rem' }}>{roleChangeError}</div>}
             <div style={{ display: 'flex', gap: '16px' }}>

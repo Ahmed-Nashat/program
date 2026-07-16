@@ -137,7 +137,6 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
             <div className="profile-tooltip">
               <div className="tooltip-name">{user?.name || 'Student'}</div>
               <hr className="tooltip-divider" />
-              <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>Role: {user?.role || 'student'}</div>
               <a href="#" className="tooltip-link">Profile</a>
               <a href="#" className="tooltip-link">Settings</a>
               <hr className="tooltip-divider" />
