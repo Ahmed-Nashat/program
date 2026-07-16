@@ -66,6 +66,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('student');
   const [phone, setPhone] = useState('');
+  const [phoneTouched, setPhoneTouched] = useState(false);
   
   // Step 2 Fields
   const [university, setUniversity] = useState('');
@@ -105,6 +106,27 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
   };
   const passStrength = calculateStrength(password);
 
+  // Strips non-digits and normalizes common paste formats (e.g. "+201012345678"
+  // or a local "01012345678") down to the 10 digits that follow the fixed +20 prefix.
+  const normalizePhoneDigits = (raw) => {
+    let digits = raw.replace(/\D/g, '');
+    if (digits.startsWith('20') && digits.length > 10) {
+      digits = digits.slice(2);
+    }
+    if (digits.startsWith('0') && digits.length === 11) {
+      digits = digits.slice(1);
+    }
+    return digits.slice(0, 10);
+  };
+
+  const handlePhoneChange = (raw) => {
+    setPhone(normalizePhoneDigits(raw));
+  };
+
+  const phoneError = phone.length === 0
+    ? 'Phone number is required'
+    : (!/^\d{10}$/.test(phone) ? 'Enter exactly 10 digits after +20 (e.g. +201012345678)' : '');
+
   const PILLS = [
     { id: 'job', label: 'Get a job', icon: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>, color: '#f87171' },
     { id: 'projects', label: 'Build projects', icon: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>, color: '#9ca3af' },
@@ -141,6 +163,11 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
       const maxSteps = role === 'instructor' ? 2 : 3;
       if (registerStep < maxSteps) {
         if (registerStep === 1) {
+          setPhoneTouched(true);
+          if (phoneError) {
+            setAuthError('Please enter a valid Egyptian phone number: +20 followed by exactly 10 digits.');
+            return;
+          }
           setIsCreatingAccount(true);
           try {
             await api.post('/auth/check-email', { email });
@@ -159,7 +186,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
         setIsCreatingAccount(true);
         try {
           const payload = {
-            name, email, password, role, phone,
+            name, email, password, role, phone: `+20${phone}`,
             university: university === 'Other' ? otherUniversity : university,
             year,
             college,
@@ -303,7 +330,23 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
                         </div>
                         <div className="input-group">
                           <label>Phone Number *</label>
-                          <input type="tel" placeholder="+20 100 000 0000" required={!isLogin} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                          <div className={`phone-input-wrapper ${phoneTouched && phoneError ? 'input-error' : ''}`}>
+                            <span className="phone-prefix">+20</span>
+                            <input
+                              type="tel"
+                              inputMode="numeric"
+                              autoComplete="tel-national"
+                              placeholder="1012345678"
+                              required={!isLogin}
+                              maxLength={10}
+                              value={phone}
+                              onChange={(e) => handlePhoneChange(e.target.value)}
+                              onBlur={() => setPhoneTouched(true)}
+                            />
+                          </div>
+                          {phoneTouched && phoneError && (
+                            <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '2px' }}>{phoneError}</div>
+                          )}
                         </div>
                       </div>
                     </div>

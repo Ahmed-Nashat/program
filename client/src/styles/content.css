@@ -13,6 +13,7 @@
     --c-orange: #FB923C;
     --c-purple: #8B5CF6;
     --c-yellow: #FBBF24;
+    --c-red: #EF4444;
     --c-bg: #0f1117;
     --c-card: #1a1c28;
     --c-light: #F9FAFB;
@@ -102,9 +103,50 @@ body.light-mode .glass-card {
 
 .hover-glow:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: var(--c-orange);
+    border-color: var(--role-color, var(--c-orange));
     box-shadow: var(--shadow);
     transform: translateY(-2px);
+}
+
+/* --- Role Accent System ---
+   One shared token (--role-color) drives every role-tinted element.
+   Set data-role on a container; descendants read the token via inheritance. */
+[data-role="student"] { --role-color: var(--c-sub); }
+[data-role="instructor"] { --role-color: var(--c-orange); }
+[data-role="admin"] { --role-color: var(--c-purple); }
+[data-role="superadmin"] { --role-color: var(--c-red); }
+
+.role-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    color: var(--role-color, var(--c-sub));
+    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--role-color, var(--c-sub)) 40%, transparent);
+}
+
+.role-text {
+    color: var(--role-color, inherit) !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: var(--role-color, inherit) !important;
+}
+
+.role-row {
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.role-row:hover {
+    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 8%, transparent);
+    border-color: color-mix(in srgb, var(--role-color, var(--c-sub)) 35%, transparent);
+}
+
+.role-option:hover {
+    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 15%, transparent) !important;
+    color: var(--role-color, var(--c-light)) !important;
+    border-color: color-mix(in srgb, var(--role-color, var(--c-sub)) 45%, transparent) !important;
 }
 
 /* --- Stats Grid (Dashboard) --- */
@@ -125,7 +167,7 @@ body.light-mode .glass-card {
 
 .stat-card:hover {
     transform: translateY(-5px);
-    border-color: var(--c-orange);
+    border-color: var(--role-color, var(--c-orange));
     box-shadow: var(--shadow);
 }
 
@@ -1193,6 +1235,52 @@ body.light-mode .strength-bar.strong {
 .auth-form .icon-input-wrapper input,
 .auth-form .icon-input-wrapper select {
     padding-left: 42px;
+}
+
+.phone-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0 14px;
+    background: var(--c-input-bg);
+    border: var(--c-border);
+    border-top: var(--c-border-top);
+    border-left: var(--c-border-left);
+    border-radius: 12px;
+    box-sizing: border-box;
+    transition: all 0.3s;
+}
+
+.phone-input-wrapper:focus-within {
+    border-color: var(--c-orange);
+    background: var(--code-bg);
+    box-shadow: var(--shadow);
+}
+
+.phone-input-wrapper.input-error {
+    border-color: #ef4444;
+}
+
+.phone-input-wrapper .phone-prefix {
+    color: var(--text-h);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding-right: 8px;
+    margin-right: 8px;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.phone-input-wrapper input {
+    flex: 1;
+    width: 100%;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 10px 0 !important;
+    color: var(--text-h);
+    font-size: 0.95rem;
 }
 
 .auth-form .password-input-wrapper input {

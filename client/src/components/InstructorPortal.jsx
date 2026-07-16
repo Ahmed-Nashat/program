@@ -112,7 +112,7 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
   if (loading) return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading Instructor Portal...</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--c-bg)' }}>
+    <div data-role="instructor" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--c-bg)' }}>
       {/* Top Navbar */}
       <nav className="top-nav" style={{ position: 'relative', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -129,7 +129,7 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
           </button>
         </div>
         <div className="nav-logo">
-          <h1 style={{ fontSize: '1.2rem', margin: '0' }}>Instructor Portal</h1>
+          <h1 className="role-text" style={{ fontSize: '1.2rem', margin: '0' }}>Instructor Portal</h1>
         </div>
         <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
           <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>

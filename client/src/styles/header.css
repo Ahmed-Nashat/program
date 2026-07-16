@@ -452,7 +452,7 @@ body.light-mode .hover-glow:hover {
 }
 
 body.light-mode .hover-glow:hover {
-    border-color: var(--c-orange);
+    border-color: var(--role-color, var(--c-orange));
     box-shadow: var(--shadow);
 }
 
