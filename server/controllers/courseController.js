@@ -34,8 +34,27 @@ export const createCourse = async (req, res) => {
 // courses regardless of status, so they can see pending/rejected ones too.
 export const getMyCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ instructor: req.user.id }).sort({ createdAt: -1 });
-    res.status(200).json({ courses });
+    const { page, limit } = req.query;
+    const baseQuery = { instructor: req.user.id };
+
+    if (page === undefined && limit === undefined) {
+      const courses = await Course.find(baseQuery).sort({ createdAt: -1 });
+      return res.status(200).json({ courses });
+    }
+
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (Number.isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (Number.isNaN(limitNum) || limitNum < 1) limitNum = 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalItems, courses] = await Promise.all([
+      Course.countDocuments(baseQuery),
+      Course.find(baseQuery).sort({ createdAt: -1 }).skip(skip).limit(limitNum)
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum) || 1;
+    res.status(200).json({ courses, pagination: { page: pageNum, limit: limitNum, totalPages, totalItems } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching your courses' });
@@ -47,17 +66,37 @@ export const getMyCourses = async (req, res) => {
 // courses; pending/rejected courses must never leak here.
 export const getApprovedCourses = async (req, res) => {
   try {
-    const { search, category } = req.query;
+    const { search, category, page, limit } = req.query;
 
     const filter = { status: 'approved' };
     if (category) filter.category = category;
     if (search) filter.title = { $regex: escapeRegex(search), $options: 'i' }; // simple case-insensitive title search
 
-    const courses = await Course.find(filter)
-      .populate('instructor', 'name') // include instructor's name, nothing more sensitive
-      .sort({ createdAt: -1 });
+    if (page === undefined && limit === undefined) {
+      const courses = await Course.find(filter)
+        .populate('instructor', 'name') // include instructor's name, nothing more sensitive
+        .sort({ createdAt: -1 });
 
-    res.status(200).json({ courses });
+      return res.status(200).json({ courses });
+    }
+
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (Number.isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (Number.isNaN(limitNum) || limitNum < 1) limitNum = 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalItems, courses] = await Promise.all([
+      Course.countDocuments(filter),
+      Course.find(filter)
+        .populate('instructor', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum) || 1;
+    res.status(200).json({ courses, pagination: { page: pageNum, limit: limitNum, totalPages, totalItems } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching courses' });
@@ -97,11 +136,35 @@ export const getCourseById = async (req, res) => {
 // @access  Private (admin only)
 export const getPendingCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ status: 'pending' })
-      .populate('instructor', 'name email')
-      .sort({ createdAt: 1 }); // oldest first — first submitted, first reviewed
+    const { page, limit } = req.query;
 
-    res.status(200).json({ courses });
+    const filter = { status: 'pending' };
+
+    if (page === undefined && limit === undefined) {
+      const courses = await Course.find(filter)
+        .populate('instructor', 'name email')
+        .sort({ createdAt: 1 }); // oldest first — first submitted, first reviewed
+
+      return res.status(200).json({ courses });
+    }
+
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (Number.isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (Number.isNaN(limitNum) || limitNum < 1) limitNum = 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalItems, courses] = await Promise.all([
+      Course.countDocuments(filter),
+      Course.find(filter)
+        .populate('instructor', 'name email')
+        .sort({ createdAt: 1 })
+        .skip(skip)
+        .limit(limitNum)
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum) || 1;
+    res.status(200).json({ courses, pagination: { page: pageNum, limit: limitNum, totalPages, totalItems } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching pending courses' });

@@ -43,7 +43,7 @@ export const getStats = async (req, res) => {
 // @access  Private (Admin)
 export const getUsers = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, page, limit } = req.query;
     let query = {};
     
     if (search) {
@@ -57,8 +57,28 @@ export const getUsers = async (req, res) => {
       };
     }
 
-    const users = await User.find(query).sort({ createdAt: -1 });
-    res.status(200).json({ users });
+    // If neither page nor limit provided, keep existing behavior (return all results)
+    if (page === undefined && limit === undefined) {
+      const users = await User.find(query).sort({ createdAt: -1 });
+      return res.status(200).json({ users });
+    }
+
+    // Parse and validate pagination params
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (Number.isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (Number.isNaN(limitNum) || limitNum < 1) limitNum = 10;
+
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalItems, users] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query).sort({ createdAt: -1 }).skip(skip).limit(limitNum)
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum) || 1;
+
+    res.status(200).json({ users, pagination: { page: pageNum, limit: limitNum, totalPages, totalItems } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching users' });
@@ -139,12 +159,37 @@ export const changeUserRole = async (req, res) => {
 // @access  Private (Admin)
 export const getTransactions = async (req, res) => {
   try {
-    const enrollments = await Enrollment.find()
-      .populate('student', 'name email phone')
-      .populate('course', 'title price')
-      .sort({ createdAt: -1 });
+    const { page, limit } = req.query;
 
-    res.status(200).json({ transactions: enrollments });
+    // If neither page nor limit provided, keep existing behavior
+    if (page === undefined && limit === undefined) {
+      const enrollments = await Enrollment.find()
+        .populate('student', 'name email phone')
+        .populate('course', 'title price')
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({ transactions: enrollments });
+    }
+
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (Number.isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (Number.isNaN(limitNum) || limitNum < 1) limitNum = 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [totalItems, enrollments] = await Promise.all([
+      Enrollment.countDocuments(),
+      Enrollment.find()
+        .populate('student', 'name email phone')
+        .populate('course', 'title price')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNum) || 1;
+
+    res.status(200).json({ transactions: enrollments, pagination: { page: pageNum, limit: limitNum, totalPages, totalItems } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error fetching transactions' });
