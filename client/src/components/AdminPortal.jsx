@@ -714,7 +714,7 @@ export default function AdminPortal({
           <div
             key={activeTab}
             className="admin-content-panel"
-            style={{ maxWidth: "100%", margin: "0 auto" }}
+            style={{ maxWidth: "100%", margin: "40px auto" }}
           >
             {activeTab === "dashboard_overview" && stats && (
               <div
