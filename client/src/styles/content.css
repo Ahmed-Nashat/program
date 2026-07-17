@@ -111,24 +111,51 @@ body.light-mode .glass-card {
 /* --- Role Accent System ---
    One shared token (--role-color) drives every role-tinted element.
    Set data-role on a container; descendants read the token via inheritance. */
-[data-role="student"] { --role-color: var(--c-sub); }
-[data-role="instructor"] { --role-color: var(--c-orange); }
-[data-role="admin"] { --role-color: var(--c-purple); }
-[data-role="superadmin"] { --role-color: var(--c-red); }
+[data-role="student"] {
+    --role-color: #94A3B8;
+    --role-soft: rgba(148, 163, 184, 0.16);
+    --role-strong: rgba(148, 163, 184, 0.3);
+    --role-glow: 0 10px 24px rgba(148, 163, 184, 0.16);
+}
+
+[data-role="instructor"] {
+    --role-color: var(--c-orange);
+    --role-soft: rgba(251, 147, 60, 0.16);
+    --role-strong: rgba(251, 147, 60, 0.3);
+    --role-glow: 0 10px 24px rgba(249, 115, 22, 0.18);
+}
+
+[data-role="admin"] {
+    --role-color: var(--c-purple);
+    --role-soft: rgba(139, 92, 246, 0.16);
+    --role-strong: rgba(139, 92, 246, 0.3);
+    --role-glow: 0 10px 24px rgba(139, 92, 246, 0.18);
+}
+
+[data-role="superadmin"] {
+    --role-color: #EF4444;
+    --role-soft: rgba(239, 68, 68, 0.16);
+    --role-strong: rgba(239, 68, 68, 0.3);
+    --role-glow: 0 10px 24px rgba(239, 68, 68, 0.18);
+}
 
 .role-badge {
     display: inline-block;
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: 999px;
     font-size: 0.8rem;
     text-transform: capitalize;
     color: var(--role-color, var(--c-sub));
-    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 18%, transparent);
-    border: 1px solid color-mix(in srgb, var(--role-color, var(--c-sub)) 40%, transparent);
+    background: linear-gradient(135deg, var(--role-soft, rgba(255, 255, 255, 0.08)), rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--role-strong, rgba(255, 255, 255, 0.12));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+
 }
 
 .role-text {
-    color: var(--role-color, inherit) !important;
     background: none !important;
     -webkit-background-clip: initial !important;
     -webkit-text-fill-color: var(--role-color, inherit) !important;
@@ -139,14 +166,19 @@ body.light-mode .glass-card {
 }
 
 .role-row:hover {
-    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 8%, transparent);
-    border-color: color-mix(in srgb, var(--role-color, var(--c-sub)) 35%, transparent);
+    background: linear-gradient(135deg, var(--role-soft, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0.025));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--c-light);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.3s;
 }
 
 .role-option:hover {
-    background: color-mix(in srgb, var(--role-color, var(--c-sub)) 15%, transparent) !important;
+    background: var(--role-soft, rgba(255, 255, 255, 0.04)) !important;
     color: var(--role-color, var(--c-light)) !important;
-    border-color: color-mix(in srgb, var(--role-color, var(--c-sub)) 45%, transparent) !important;
+    border-color: var(--role-strong, rgba(255, 255, 255, 0.1)) !important;
+    box-shadow: var(--role-glow, 0 8px 18px rgba(0, 0, 0, 0.12));
 }
 
 /* --- Stats Grid (Dashboard) --- */
@@ -160,6 +192,7 @@ body.light-mode .glass-card {
 .stat-card {
     padding: 24px;
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 8px;
     transition: all 0.3s;
@@ -169,6 +202,11 @@ body.light-mode .glass-card {
     transform: translateY(-5px);
     border-color: var(--role-color, var(--c-orange));
     box-shadow: var(--shadow);
+}
+
+/* Revenue-specific hover: use green accent to match value color */
+.revenue-card:hover {
+    border-color: #10B981;
 }
 
 .stat-value {
@@ -183,6 +221,126 @@ body.light-mode .glass-card {
     font-size: 0.95rem;
     color: var(--c-sub);
     font-weight: 600;
+}
+
+/* --- Overview rows layout (Admin Portal) --- */
+.overview-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.overview-row.first-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+}
+
+.overview-row.second-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ensure consistent card sizing when centered */
+.overview-row.second-row .stat-card {
+    max-width: 100%;
+    min-width: 200px;
+    max-width: 320px;
+}
+
+/* --- Role Tabs (User Management) --- */
+.role-tabs {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.role-tab-button {
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--c-sub);
+    font-weight: 600;
+    cursor: pointer;
+    transition: none;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+}
+
+.role-tab-button:hover {
+    color: var(--role-color, var(--c-sub));
+    background: linear-gradient(135deg, var(--role-soft, rgba(255, 255, 255, 0.08)), rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--role-strong, rgba(255, 255, 255, 0.12));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.role-tab-button.active {
+    color: var(--role-color, var(--c-sub));
+    background: linear-gradient(135deg, var(--role-soft, rgba(255, 255, 255, 0.08)), rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--role-strong, rgba(255, 255, 255, 0.12));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+
+
+/*
+
+width: 100%;
+padding: 10px 14px 10px 42px;
+background: rgba(255, 255, 255, 0.03);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
+border: 1px solid rgba(255, 255, 255, 0.05);
+border-top: 1px solid rgba(255, 255, 255, 0.15);
+border-left: 1px solid rgba(255, 255, 255, 0.15);
+border-radius: 20px;
+color: var(--c-light);
+font-size: 0.9rem;
+box-sizing: border-box;
+transition: all 0.3s;
+box-shadow: var(--shadow);
+
+*/
+
+
+.user-search-input,
+.search-bar-glass input {
+    width: 100%;
+    padding: 11px 16px 11px 42px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    backdrop-filter: blur(14px);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--c-light);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.user-search-input::placeholder,
+.search-bar-glass input::placeholder {
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.user-search-input:focus,
+.search-bar-glass input:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* --- Layout Grid --- */
@@ -497,39 +655,39 @@ body.light-mode .glass-card {
 
 .filter-indicator {
     position: absolute;
-    top: 27px; /* matches button margin-top */
-    bottom: 35px; /* accounts for button margin-bottom and padding-bottom */
-    height: calc(100% - 62px); /* Fallback */
+    top: 27px;
+    bottom: 35px;
+    height: calc(100% - 62px);
     background: linear-gradient(135deg, var(--c-orange), var(--c-yellow));
-    border-radius: 20px;
+    border-radius: 999px;
     z-index: 0;
-    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    box-shadow: var(--c-glow);
+    transition: none;
+    box-shadow: 0 10px 24px rgba(249, 115, 22, 0.24);
     pointer-events: none;
 }
 
 .filter-btn {
-    background: var(--c-input-bg);
-    border: var(--c-border);
-    border-top: var(--c-border-top);
-    border-left: var(--c-border-left);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--c-light);
-    padding: 8px 20px;
-    border-radius: 20px;
+    padding: 8px 18px;
+    border-radius: 999px;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
     position: relative;
     z-index: 1;
-    transition: all 0.3s;
+    transition: none;
     margin-top: 27px;
     margin-left: 37px;
     margin-bottom: 27px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .filter-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-
+    border-color: rgba(255, 255, 255, 0.16);
 }
 
 .filter-btn.active,
@@ -543,6 +701,11 @@ body.light-mode .glass-card {
 body.light-mode .filter-btn {
     color: var(--c-light);
     border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.65);
+}
+
+body.light-mode .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.82);
 }
 
 body.light-mode .filter-btn.active {

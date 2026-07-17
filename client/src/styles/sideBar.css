@@ -38,7 +38,7 @@ body {
     padding: 20px 14px 20px;
     flex-shrink: 0;
     overflow: hidden;
-    transition: width .3s ease;
+    transition: width .3s ease, padding .3s ease;
     border-right: 1px solid var(--border-color);
 }
 
@@ -135,9 +135,11 @@ body {
 }
 
 .sideBarButton.active {
-    background: var(--bg-active);
-    color: var(--accent);
-    box-shadow: var(--shadow);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+    color: var(--text-primary);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 /* Settings pushed to bottom */
@@ -209,6 +211,9 @@ body {
     justify-content: center;
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .collapse-icon {
@@ -373,4 +378,3 @@ body.light-mode .sideBarButton::after {
 body.light-mode .content {
     color: #1e293b;
 }
-
