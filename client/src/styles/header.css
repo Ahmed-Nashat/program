@@ -15,7 +15,9 @@ body.light-mode {
     --c-sub: #4B5563;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
@@ -30,7 +32,8 @@ body {
 }
 
 /* Global Reset for Outlines */
-button:focus, input:focus {
+button:focus,
+input:focus {
     outline: none !important;
 }
 
@@ -46,7 +49,8 @@ body::after {
     filter: blur(120px);
     opacity: 0.15;
     animation: float 20s infinite alternate ease-in-out;
-    pointer-events: none; /* ensures they don't block clicks */
+    pointer-events: none;
+    /* ensures they don't block clicks */
 }
 
 body::before {
@@ -64,9 +68,17 @@ body::after {
 }
 
 @keyframes float {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(10vw, 15vh) scale(1.2); }
-    100% { transform: translate(-5vw, 20vh) scale(0.9); }
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate(10vw, 15vh) scale(1.2);
+    }
+
+    100% {
+        transform: translate(-5vw, 20vh) scale(0.9);
+    }
 }
 
 .top-nav {
@@ -75,13 +87,14 @@ body::after {
     left: 0;
     width: 100%;
     /* Glassmorphism Header */
-    background-color: rgba(15, 17, 23, 0.7); /* Matches your dark bg, but 70% transparent */
+    background-color: rgba(15, 17, 23, 0.7);
+    /* Matches your dark bg, but 70% transparent */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    
+
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: var(--shadow);
-    
+
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -117,9 +130,10 @@ body::after {
 }
 
 /* Magic happens here: margin-right: auto pushes controls far right */
-.nav-search {
+.nav-search,
+.search-bar-glass {
     flex: 1;
-    max-width: 500px;
+    max-width: 520px;
     position: relative;
     margin-right: auto;
 }
@@ -129,38 +143,51 @@ body::after {
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--c-sub);
+    color: rgba(255, 255, 255, 0.7);
+    pointer-events: none;
 }
 
-.nav-search input {
+.nav-search input,
+.user-search-input,
+.search-bar-glass input {
     width: 100%;
-    padding: 10px 14px 10px 42px;
-
-    /* 1. Frosted glass transparent background */
-    background: rgba(255, 255, 255, 0.03);
-
-    /* 2. The blur effect */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-
-    /* 3. Glass edges catching the light */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 1px solid rgba(255, 255, 255, 0.15);
-
-    border-radius: 20px;
+    padding: 11px 16px 11px 42px;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
     color: var(--c-light);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     box-sizing: border-box;
-    transition: all 0.3s;
-    box-shadow: var(--shadow);
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
-.nav-search input:focus {
-    border-color: var(--c-orange);
-    /* Make the glass slightly brighter when typing */
-    background: rgba(255, 255, 255, 0.08); 
-    box-shadow: var(--shadow);
+.nav-search input::placeholder,
+.user-search-input::placeholder,
+.search-bar-glass input::placeholder {
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.nav-search input:hover,
+.user-search-input:hover,
+.search-bar-glass input:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+}
+
+.nav-search input:focus,
+.user-search-input:focus,
+.search-bar-glass input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.16);
+    transform: translateY(-1px);
 }
 
 .nav-controls {
@@ -171,23 +198,27 @@ body::after {
 }
 
 .nav-icon-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--c-sub);
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
 .nav-icon-btn:hover {
     color: var(--c-light);
-    border-color: var(--c-orange);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
 }
 
 .nav-bell {
@@ -233,7 +264,8 @@ body::after {
     top: 50px;
     right: 0;
     /* Glassmorphism Background (Matches Header) */
-    background-color: rgba(15, 17, 23, 0.95); /* Slightly more opaque than header for readability */
+    background-color: rgba(15, 17, 23, 0.95);
+    /* Slightly more opaque than header for readability */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     /* Glass edges */
@@ -335,7 +367,8 @@ body::after {
     background: linear-gradient(90deg, var(--c-orange), var(--c-yellow));
     border-radius: 3px 3px 0 0;
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    pointer-events: none; /* so it doesn't block clicks */
+    pointer-events: none;
+    /* so it doesn't block clicks */
 }
 
 .badge-soon {
@@ -357,10 +390,13 @@ body::after {
 /* --- LIGHT MODE OVERRIDES --- */
 /* ========================================================= */
 body.light-mode {
-    --c-bg: #e5e7eb;      /* Soft silver background */
+    --c-bg: #e5e7eb;
+    /* Soft silver background */
     --c-card: rgba(255, 255, 255, 0.7);
-    --c-light: #1f2937;   /* Dark text for contrast */
-    --c-sub: #4b5563;     /* Medium text */
+    --c-light: #1f2937;
+    /* Dark text for contrast */
+    --c-sub: #4b5563;
+    /* Medium text */
 }
 
 /* Light Mode Glass Cards */
@@ -372,19 +408,29 @@ body.light-mode .profile-tooltip {
     box-shadow: var(--shadow);
 }
 
-body.light-mode .nav-search input {
-    background: rgba(255, 255, 255, 0.4); 
-    border: 1px solid rgba(255, 255, 255, 0.8);
+body.light-mode .nav-search input,
+body.light-mode .user-search-input,
+body.light-mode .search-bar-glass input {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.9);
     border-top: 1px solid rgba(255, 255, 255, 1);
     border-left: 1px solid rgba(255, 255, 255, 1);
     box-shadow: var(--shadow);
-    color: var(--c-bg); /* Dark text for light mode */
+    color: var(--c-light);
 }
 
-body.light-mode .nav-search input:focus {
-    background: rgba(255, 255, 255, 0.6);
+body.light-mode .nav-search input::placeholder,
+body.light-mode .user-search-input::placeholder,
+body.light-mode .search-bar-glass input::placeholder {
+    color: rgba(31, 41, 55, 0.6);
+}
+
+body.light-mode .nav-search input:focus,
+body.light-mode .user-search-input:focus,
+body.light-mode .search-bar-glass input:focus {
+    background: rgba(255, 255, 255, 0.75);
     border-color: var(--c-orange);
-    box-shadow: var(--shadow);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
 }
 
 body.light-mode .top-nav,
@@ -395,7 +441,8 @@ body.light-mode .learning-glass {
 }
 
 body.light-mode .glass-btn {
-    color: #fff; /* Keep button text white for contrast against gradients */
+    color: #fff;
+    /* Keep button text white for contrast against gradients */
 }
 
 body.light-mode .progress-bar-container {
@@ -407,25 +454,32 @@ body.light-mode .progress-bar-container {
     .nav-row-top {
         gap: 15px;
     }
+
     .top-nav {
         padding: 0 16px;
     }
+
     .nav-row-bottom {
         gap: 15px;
         overflow-x: auto;
         padding-bottom: 5px;
     }
+
     .nav-search {
         min-width: 150px;
     }
 }
+
 @media (max-width: 600px) {
     .nav-brand {
-        display: none; /* Hide text, keep only P logo */
+        display: none;
+        /* Hide text, keep only P logo */
     }
+
     .nav-controls {
         gap: 10px;
     }
+
     .profile-tooltip {
         right: 0;
         left: auto;
@@ -439,15 +493,16 @@ body.light-mode .nav-icon-btn:hover {
 /* Make the ambient orbs pop more in light mode */
 body.light-mode::before,
 body.light-mode::after {
-    opacity: 0.25; 
+    opacity: 0.25;
 }
 
 /* Fix Hover States in Light Mode */
-body.light-mode .course-card:hover, 
+body.light-mode .course-card:hover,
 body.light-mode .instructor-card:hover,
 body.light-mode .hover-glow:hover {
-    background: rgba(255, 255, 255, 0.9); /* Gets more solid white on hover */
-    box-shadow: var(--shadow); 
+    background: rgba(255, 255, 255, 0.9);
+    /* Gets more solid white on hover */
+    box-shadow: var(--shadow);
     border-color: rgba(255, 255, 255, 1);
 }
 
@@ -465,7 +520,7 @@ body.light-mode .hover-glow:hover {
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2); 
+    background: rgba(0, 0, 0, 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
