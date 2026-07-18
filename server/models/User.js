@@ -35,6 +35,23 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'pending_verification', 'banned'],
+      default: 'active',
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
     university: { type: String, default: '' },
     college: { type: String, default: '' },
     year: { type: String, default: '' },

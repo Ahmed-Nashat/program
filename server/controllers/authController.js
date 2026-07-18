@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import generateTokenAndSetCookie from '../utils/generateToken.js';
+import { getInternalConfig } from '../utils/configFetcher.js';
 
 // @route   POST /api/auth/check-email
 // @access  Public
@@ -40,12 +41,27 @@ export const register = async (req, res) => {
     // created manually (e.g. directly in the DB or by another admin).
     const safeRole = role === 'instructor' ? 'instructor' : 'student';
 
+    // Verify system configurations for registration
+    const config = await getInternalConfig();
+    
+    if (safeRole === 'student' && !config.registration?.studentRegistration) {
+      return res.status(403).json({ message: 'Student registration is currently disabled by administrators.' });
+    }
+    
+    if (safeRole === 'instructor' && !config.registration?.instructorRegistration) {
+      return res.status(403).json({ message: 'Instructor registration is currently disabled by administrators.' });
+    }
+    
+    if (config.registration?.eduEmailOnly && !email.toLowerCase().endsWith('.edu')) {
+      return res.status(403).json({ message: 'Only .edu email addresses are allowed to register.' });
+    }
+
     const user = await User.create({ 
       name, email, password, role: safeRole, phone: phone || '',
       university, college, year, track, providedCourses, linkedinUrl, socialUrl, goalsText, selectedPills
     });
 
-    generateTokenAndSetCookie(res, user._id);
+    await generateTokenAndSetCookie(res, user._id);
 
     res.status(201).json({
       user: {
@@ -87,7 +103,12 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
     }
 
-    generateTokenAndSetCookie(res, user._id);
+    const config = await getInternalConfig();
+    if (config.security?.maintenanceLock && user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Platform is locked for maintenance. Only Super Admins can log in.' });
+    }
+
+    await generateTokenAndSetCookie(res, user._id);
 
     res.status(200).json({
       user: {

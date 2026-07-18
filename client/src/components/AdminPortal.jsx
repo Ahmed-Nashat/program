@@ -4,6 +4,16 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
+import OverviewDashboard from "./OverviewDashboard";
+import StatisticsPage from "./StatisticsPage";
+import AnalyticsPage from "./AnalyticsPage";
+import RecentActivityPage from "./RecentActivityPage";
+import UserManagement from "./UserManagement";
+import CourseManagement from "./CourseManagement";
+import LessonManagement from "./LessonManagement";
+import CategoryManagement from "./CategoryManagement";
+import SystemManagement from "./SystemManagement";
+import WebsiteManagement from "./WebsiteManagement/WebsiteManagement";
 
 const ROLE_OPTIONS = ["student", "instructor", "admin"];
 const SIDEBAR_TAB_STEP = 44;
@@ -89,6 +99,84 @@ const RoleMenu = ({ anchorEl, onClose, children }) => {
   );
 };
 
+// Generic placeholder for pages not yet implemented
+const PlaceholderPage = ({ title }) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "20px",
+      padding: "80px 40px",
+      textAlign: "center",
+    }}
+  >
+    <div
+      className="glass-card"
+      style={{
+        width: "100%",
+        maxWidth: "480px",
+        padding: "56px 40px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "16px",
+      }}
+    >
+      {/* Hourglass / construction icon */}
+      <svg
+        width="56"
+        height="56"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--c-orange)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ opacity: 0.85 }}
+      >
+        <path d="M5 3h14" />
+        <path d="M5 21h14" />
+        <path d="M5 3l7 9-7 9" />
+        <path d="M19 3l-7 9 7 9" />
+      </svg>
+
+      <h2
+        style={{
+          fontSize: "1.5rem",
+          margin: 0,
+          background: "linear-gradient(135deg, var(--c-orange), var(--c-yellow))",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}
+      >
+        {title}
+      </h2>
+
+      <p style={{ color: "var(--c-sub)", margin: 0, lineHeight: 1.6 }}>
+        This section is currently under construction and will be available soon.
+      </p>
+
+      <div
+        style={{
+          marginTop: "8px",
+          padding: "6px 18px",
+          borderRadius: "99px",
+          border: "1px solid rgba(249,115,22,0.35)",
+          color: "var(--c-orange)",
+          fontSize: "0.85rem",
+          fontWeight: 600,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
+      >
+        Coming Soon
+      </div>
+    </div>
+  </div>
+);
+
 const AnimatedNumber = ({ value }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -132,7 +220,6 @@ export default function AdminPortal({
 
   // Data States
   const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [pendingCourses, setPendingCourses] = useState([]);
 
@@ -140,20 +227,10 @@ export default function AdminPortal({
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
 
-  // Search
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Change Role State
-  const [roleMenuUserId, setRoleMenuUserId] = useState(null);
-  const roleButtonRefs = useRef({});
-
   // Reject-course-with-reason modal state
   const [pendingReject, setPendingReject] = useState(null); // { id, title } | null
   const [rejectReason, setRejectReason] = useState("");
   const [rejectReasonError, setRejectReasonError] = useState("");
-  const [pendingRoleChange, setPendingRoleChange] = useState(null); // { id, name, newRole } | null
-  const [changingRole, setChangingRole] = useState(false);
-  const [roleChangeError, setRoleChangeError] = useState("");
 
   // Sidebar Dropdown State
   const [expandedGroup, setExpandedGroup] = useState("Dashboard");
@@ -169,6 +246,7 @@ export default function AdminPortal({
   };
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
       const [statsRes, pendingRes] = await Promise.all([
         api.get("/admin/stats"),
@@ -183,64 +261,33 @@ export default function AdminPortal({
     }
   };
 
-  const fetchUsers = async (query = "") => {
-    try {
-      const res = await api.get(
-        `/admin/users?search=${encodeURIComponent(query)}`,
-      );
-      setUsers(res.data.users || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const fetchTransactions = async () => {
+    setLoading(true);
     try {
       const res = await api.get("/admin/transactions");
       setTransactions(res.data.transactions || []);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user?.role !== "admin" && user?.role !== "superadmin") {
+    if (!user) return;
+    if (user.role !== "admin" && user.role !== "superadmin") {
       navigate("/");
       return;
     }
 
-    setLoading(true);
     if (activeTab.startsWith("dashboard") || activeTab.startsWith("courses")) {
       fetchDashboardData();
-    } else if (activeTab.startsWith("users")) {
-      fetchUsers(searchQuery);
     } else if (activeTab === "enrollment") {
       fetchTransactions();
     } else {
       setLoading(false);
     }
   }, [user, navigate, activeTab]);
-
-  // Debounced Search — trigger only for users tabs
-  useEffect(() => {
-    if (!activeTab.startsWith("users")) return;
-    const delay = setTimeout(() => {
-      fetchUsers(searchQuery);
-    }, 400);
-    return () => clearTimeout(delay);
-  }, [searchQuery, activeTab]);
-
-  // Compute visibleUsers based on the active users tab so each tab only shows its role
-  const roleMap = {
-    users_students: "student",
-    users_instructors: "instructor",
-    users_admins: "admin",
-    users_superadmins: "superadmin",
-  };
-  const getDesiredRole = (tabId) => roleMap[tabId] || "student";
-  const visibleUsers = activeTab.startsWith("users")
-    ? users.filter((u) => u.role === getDesiredRole(activeTab))
-    : users;
 
   const handleApprove = async (id) => {
     setProcessingId(id);
@@ -292,57 +339,7 @@ export default function AdminPortal({
     }
   };
 
-  const handleToggleBlock = async (id) => {
-    try {
-      await api.patch(`/admin/users/${id}/block`);
-      fetchUsers(searchQuery);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to toggle block");
-    }
-  };
-
-  // Opens the confirm modal — no request is sent until the user confirms.
-  const requestRoleChange = (u, newRole) => {
-    setRoleMenuUserId(null);
-    setRoleChangeError("");
-    setPendingRoleChange({ id: u._id, name: u.name, newRole });
-  };
-
-  const cancelRoleChange = () => {
-    setPendingRoleChange(null);
-    setRoleChangeError("");
-  };
-
-  const confirmRoleChange = async () => {
-    if (!pendingRoleChange) return;
-    setChangingRole(true);
-    setRoleChangeError("");
-    try {
-      await api.patch(`/admin/users/${pendingRoleChange.id}/role`, {
-        role: pendingRoleChange.newRole,
-      });
-      setPendingRoleChange(null);
-      fetchUsers(searchQuery);
-    } catch (err) {
-      setRoleChangeError(
-        err.response?.data?.message || "Failed to change role",
-      );
-    } finally {
-      setChangingRole(false);
-    }
-  };
-
-  // A row can have its role changed unless it's the acting user themselves,
-  // it's already a superadmin (untouchable via this UI), or it's an admin
-  // being acted on by anyone other than a superadmin.
-  const canChangeRole = (u) => {
-    if (u._id === user.id) return false;
-    if (u.role === "superadmin") return false;
-    if (u.role === "admin" && user.role !== "superadmin") return false;
-    return true;
-  };
-
-  if (loading && !stats && !users.length && !transactions.length) {
+  if (loading && !stats && !transactions.length) {
     return (
       <div
         style={{
@@ -357,131 +354,86 @@ export default function AdminPortal({
     );
   }
 
-  const menuGroups =
-    user?.role === "superadmin"
-      ? [
-          {
-            title: "Dashboard",
-            items: [
-              { id: "dashboard_overview", label: "Overview" },
-              { id: "dashboard_stats", label: "Statistics" },
-              { id: "dashboard_analytics", label: "Analytics" },
-              { id: "dashboard_activity", label: "Recent Activity" },
-            ],
-          },
-          {
-            title: "User Management",
-            items: [
-              { id: "users", label: "Users" },
-            ],
-          },
+  // Unified menu structure for both admin and superadmin
+  const menuGroups = [
+    {
+      title: "Dashboard",
+      items: [
+        { id: "dashboard_overview", label: "Overview" },
+        { id: "dashboard_stats", label: "Statistics" },
+        { id: "dashboard_analytics", label: "Analytics" },
+        { id: "dashboard_activity", label: "Recent Activity" },
+      ],
+    },
+    {
+      title: "User Management",
+      items: [{ id: "users", label: "Users" }],
+    },
+    {
+      title: "Course Management",
+      items: [
+        { id: "courses_all", label: "Courses" },
+        { id: "courses_lessons", label: "Lessons" },
+        { id: "courses_categories", label: "Categories" },
+      ],
+    },
+    {
+      title: "Enrollment Management",
+      items: [{ id: "enrollment", label: "Enrollments" }],
+    },
+    {
+      title: "Certificate Management",
+      items: [{ id: "certificates", label: "Certificates" }],
+    },
+    {
+      title: "Website Management",
+      items: [
+        { id: "web_home", label: "Homepage" },
+        { id: "web_about", label: "About" },
+        { id: "web_faq", label: "FAQ" },
+        { id: "web_contact", label: "Contact" },
+        { id: "web_testimonials", label: "Testimonials" },
+      ],
+    },
+    {
+      title: "Announcement Management",
+      items: [{ id: "announcements", label: "Announcements" }],
+    },
+    {
+      title: "Reports & Analytics",
+      items: [{ id: "reports", label: "Reports & Analytics" }],
+    },
+    {
+      title: "Role & Permission",
+      items: [{ id: "roles", label: "Role & Permission Management" }],
+    },
+    {
+      title: "System Management",
+      items: [{ id: "settings", label: "System Management" }],
+    },
+    {
+      title: "Profile",
+      items: [
+        { id: "profile_my", label: "My Profile" },
+        { id: "profile_password", label: "Change Password" },
+      ],
+    },
+  ];
 
-          {
-            title: "Course Management",
-            items: [
-              { id: "courses_all", label: "Courses" },
-              { id: "courses_lessons", label: "Lessons" },
-              { id: "courses_categories", label: "Categories" },
-            ],
-          },
-          {
-            title: "Enrollment Management",
-            items: [{ id: "enrollment", label: "Enrollments" }],
-          },
-          {
-            title: "Certificate Management",
-            items: [{ id: "certificates", label: "Certificates" }],
-          },
-          {
-            title: "Website Management",
-            items: [
-              { id: "web_home", label: "Homepage" },
-              { id: "web_about", label: "About" },
-              { id: "web_faq", label: "FAQ" },
-              { id: "web_contact", label: "Contact" },
-              { id: "web_testimonials", label: "Testimonials" },
-            ],
-          },
-          {
-            title: "Announcement Management",
-            items: [{ id: "announcements", label: "Announcements" }],
-          },
-          {
-            title: "Reports & Analytics",
-            items: [{ id: "reports", label: "Reports & Analytics" }],
-          },
-          {
-            title: "Role & Permission",
-            items: [{ id: "roles", label: "Role & Permission Management" }],
-          },
-          {
-            title: "System Settings",
-            items: [{ id: "settings", label: "System Settings" }],
-          },
-          {
-            title: "Profile",
-            items: [
-              { id: "profile_my", label: "My Profile" },
-              { id: "profile_password", label: "Change Password" },
-            ],
-          },
-        ]
-      : [
-          {
-            title: "Dashboard",
-            items: [
-              { id: "dashboard_overview", label: "Overview" },
-              { id: "dashboard_stats", label: "Statistics" },
-              { id: "dashboard_activity", label: "Recent Activity" },
-            ],
-          },
-          {
-            title: "Student Management",
-            items: [{ id: "users_students", label: "Students" }],
-          },
-          {
-            title: "Instructor Management",
-            items: [{ id: "users_instructors", label: "Instructors" }],
-          },
-          {
-            title: "Course Management",
-            items: [
-              { id: "courses_all", label: "Courses" },
-              { id: "courses_lessons", label: "Lessons" },
-              { id: "courses_categories", label: "Categories" },
-            ],
-          },
-          {
-            title: "Enrollment Management",
-            items: [{ id: "enrollment", label: "Enrollments" }],
-          },
-          {
-            title: "Certificate Management",
-            items: [{ id: "certificates", label: "Certificates" }],
-          },
-          {
-            title: "Announcement Management",
-            items: [{ id: "announcements", label: "Announcements" }],
-          },
-          {
-            title: "Reports",
-            items: [{ id: "reports", label: "Reports" }],
-          },
-          {
-            title: "Profile",
-            items: [
-              { id: "profile_my", label: "My Profile" },
-              { id: "profile_password", label: "Change Password" },
-            ],
-          },
-        ];
+  // Navigate to a tab and auto-expand its sidebar group.
+  const navigateToTab = (tabId) => {
+    setActiveTab(tabId);
+    const group = menuGroups.find((g) => g.items.some((i) => i.id === tabId));
+    if (group) setExpandedGroup(group.title);
+  };
+
+  const SIDEBAR_TAB_STEP = 46;
 
   return (
     <div
       data-role={user?.role}
       style={{ display: "flex", flexDirection: "column", height: "100vh" }}
     >
-      {/* Top Navbar using top-nav styling */}
       <nav
         className="top-nav"
         style={{
@@ -596,31 +548,9 @@ export default function AdminPortal({
       </nav>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar */}
         <aside
           className={`glass-card admin-sidebar${sidebarCollapsed ? " collapsed" : ""}`}
         >
-          <div className="admin-sidebar-header">
-            {/* <button
-              type="button"
-              className="admin-sidebar-collapse-btn"
-              onClick={() => setSidebarCollapsed((prev) => !prev)}
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button> */}
-          </div>
-
           {menuGroups.map((group, idx) => {
             const isGroupExpanded = expandedGroup === group.title;
             const activeIndex = group.items.findIndex((t) =>
@@ -637,7 +567,9 @@ export default function AdminPortal({
                   <span className="admin-sidebar-group-icon" aria-hidden="true">
                     {group.title.charAt(0)}
                   </span>
-                  <span className="admin-sidebar-group-label">{group.title}</span>
+                  <span className="admin-sidebar-group-label">
+                    {group.title}
+                  </span>
                   <svg
                     className="admin-sidebar-chevron"
                     width="14"
@@ -709,447 +641,30 @@ export default function AdminPortal({
           })}
         </aside>
 
-        {/* Main Content Area */}
         <div style={{ flex: 1, padding: "32px 48px", overflowY: "auto" }}>
           <div
             key={activeTab}
             className="admin-content-panel"
             style={{ maxWidth: "100%", margin: "40px auto" }}
           >
-            {activeTab === "dashboard_overview" && stats && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "32px",
-                }}
-              >
-                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Overview</h2>
-
-                <div className="overview-rows-container">
-                  <div className="overview-row first-row">
-                    <div className="glass-card stat-card revenue-card">
-                      <div className="stat-label">Revenue</div>
-                      <div
-                        className="stat-value"
-                        style={{
-                          color: "#10B981",
-                          background: "none",
-                          WebkitTextFillColor: "initial",
-                        }}
-                      >
-                        EGP <AnimatedNumber value={stats.totalRevenue} />
-                      </div>
-                    </div>
-
-                    <div className="glass-card stat-card" data-role="student">
-                      <div className="stat-label">Students</div>
-                      <div className="stat-value role-text">
-                        <AnimatedNumber value={stats.totalStudents} />
-                      </div>
-                    </div>
-
-                    <div
-                      className="glass-card stat-card"
-                      data-role="instructor"
-                    >
-                      <div className="stat-label">Instructors</div>
-                      <div className="stat-value role-text">
-                        <AnimatedNumber value={stats.totalInstructors} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="overview-row second-row">
-                    {user?.role === "superadmin" && (
-                      <div
-                        style={{ width: "100%" }}
-                        className="glass-card stat-card"
-                        data-role="superadmin"
-                      >
-                        <div className="stat-label">Super Admins</div>
-                        <div
-                          className="stat-value role-text"
-                          style={{ color: "var(--c-red)" }}
-                        >
-                          <AnimatedNumber value={stats.totalSuperAdmins} />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="glass-card stat-card" data-role="admin">
-                      <div className="stat-label">Admins</div>
-                      <div className="stat-value role-text">
-                        <AnimatedNumber value={stats.totalAdmins} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="glass-card" style={{ padding: "24px" }}>
-                  <h3 style={{ margin: "0 0 16px 0", fontSize: "1.2rem" }}>
-                    Enrollments by Category
-                  </h3>
-                  {Object.keys(stats.categoryCounts).length === 0 ? (
-                    <p style={{ color: "var(--c-sub)" }}>No enrollments yet.</p>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                      }}
-                    >
-                      {Object.entries(stats.categoryCounts).map(
-                        ([cat, count]) => (
-                          <div
-                            key={cat}
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              padding: "12px",
-                              background: "var(--c-input-bg)",
-                              borderRadius: "8px",
-                            }}
-                          >
-                            <span style={{ fontWeight: "500" }}>{cat}</span>
-                            <span
-                              style={{
-                                color: "var(--c-orange)",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {count} enrolled
-                            </span>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+            {activeTab === "dashboard_overview" && (
+              <OverviewDashboard
+                stats={stats}
+                loading={loading}
+                user={user}
+                pendingCourses={pendingCourses}
+                onNavigate={navigateToTab}
+              />
             )}
 
+            {activeTab === "dashboard_stats" && <StatisticsPage />}
+            
+            {activeTab === "dashboard_analytics" && <AnalyticsPage />}
+            
+            {activeTab === "dashboard_activity" && <RecentActivityPage />}
+
             {activeTab.startsWith("users") && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <h2 style={{ fontSize: "1.8rem", margin: 0 }}>
-                    User Management
-                  </h2>
-
-                  <div style={{ marginLeft: "16px", flex: "0 0 420px" }}>
-                    <div className="search-bar-glass">
-                      <input
-                        type="text"
-                        placeholder="Search users by name, email, or phone..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="user-search-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Role Tabs */}
-                <div className="role-tabs" style={{ marginTop: "4px" }}>
-                  {[
-                    {
-                      id: "users_students",
-                      label: "Students",
-                      role: "student",
-                    },
-                    {
-                      id: "users_instructors",
-                      label: "Instructors",
-                      role: "instructor",
-                    },
-                    { id: "users_admins", label: "Admins", role: "admin" },
-                    {
-                      id: "users_superadmins",
-                      label: "Super Admins",
-                      role: "superadmin",
-                    },
-                  ]
-                    .filter(
-                      (t) =>
-                        !(
-                          t.role === "superadmin" && user?.role !== "superadmin"
-                        ),
-                    )
-                    .map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={
-                          "role-tab-button" +
-                          (activeTab === tab.id ? " active" : "")
-                        }
-                        data-role={tab.role}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                </div>
-
-                <div className="glass-card user-management-table-card">
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      textAlign: "left",
-                    }}
-                  >
-                    <thead style={{ background: "var(--c-border-subtle)" }}>
-                      <tr>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                            borderTopLeftRadius: "15px",
-                          }}
-                        >
-                          Name
-                        </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                          }}
-                        >
-                          Email
-                        </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                          }}
-                        >
-                          Phone
-                        </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                          }}
-                        >
-                          Role
-                        </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                          }}
-                        >
-                          Status
-                        </th>
-                        <th
-                          style={{
-                            padding: "16px",
-                            fontWeight: "600",
-                            color: "var(--c-sub)",
-                            textAlign: "right",
-                            borderTopRightRadius: "15px",
-                          }}
-                        >
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(visibleUsers || []).length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan="6"
-                            style={{
-                              maxWidth: "100%",
-                              padding: "24px",
-                              textAlign: "center",
-                              color: "var(--c-sub)",
-                            }}
-                          >
-                            No users found
-                          </td>
-                        </tr>
-                      ) : (
-                        (visibleUsers || []).map((u) => (
-                          <tr
-                            key={u._id}
-                            data-role={u.role}
-                            className="role-row"
-                            style={{
-                              borderTop: "1px solid var(--c-border-subtle)",
-                            }}
-                          >
-                            <td style={{ padding: "16px" }}>{u.name}</td>
-                            <td
-                              style={{ padding: "16px", color: "var(--c-sub)" }}
-                            >
-                              {u.email}
-                            </td>
-                            <td
-                              style={{ padding: "16px", color: "var(--c-sub)" }}
-                            >
-                              {u.phone || "-"}
-                            </td>
-                            <td style={{ padding: "16px" }}>
-                              <span className="role-badge">{u.role}</span>
-                            </td>
-                            <td style={{ padding: "16px" }}>
-                              <span
-                                style={{
-                                  color: u.isBlocked ? "#ef4444" : "#10B981",
-                                  fontSize: "0.9rem",
-                                }}
-                              >
-                                {u.isBlocked ? "Blocked" : "Active"}
-                              </span>
-                            </td>
-                            <td style={{ padding: "16px", textAlign: "right" }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "8px",
-                                  justifyContent: "flex-end",
-                                  position: "relative",
-                                }}
-                              >
-                                {u._id !== user.id && (
-                                  <>
-                                    {canChangeRole(u) && (
-                                      <div>
-                                        <button className="changeRole"
-                                          ref={(el) => {
-                                            roleButtonRefs.current[u._id] = el;
-                                          }}
-                                          onClick={() =>
-                                            setRoleMenuUserId(
-                                              roleMenuUserId === u._id
-                                                ? null
-                                                : u._id,
-                                            )
-                                          }
-                                          style={{
-                                            background: "transparent",
-                                            border:
-                                              "1px solid var(--c-border-active)",
-                                            padding: "6px 12px",
-                                            borderRadius: "6px",
-                                            color: "var(--c-light)",
-                                            cursor: "pointer",
-                                            background: "rgba(15, 17, 23, 0.7)",
-                                            backdropFilter: "blur(20px)",
-                                            // -webkitBackdropFilter: "blur(20px)",
-                                            border: "var(--c-border)",
-                                            borderTop:
-                                              "1px solid rgba(255, 255, 255, 0.15)",
-                                            borderLeft:
-                                              "1px solid rgba(255, 255, 255, 0.15)",
-                                            borderRadius: "16px",
-                                            boxShadow: "var(--shadow)",
-                                          }}
-                                          /*
-                                          
-                                              background: rgba(15, 17, 23, 0.7);
-                                              backdrop-filter: blur(20px);
-                                              -webkit-backdrop-filter: blur(20px);
-                                              border: var(--c-border);
-                                              border-top: 1px solid rgba(255, 255, 255, 0.15);
-                                              border-left: 1px solid rgba(255, 255, 255, 0.15);
-                                              border-radius: 16px;
-                                              box-shadow: var(--shadow);
-
-                                          */
-                                        >
-                                          Change Role
-                                        </button>
-                                        {roleMenuUserId === u._id && (
-                                          <RoleMenu
-                                            anchorEl={
-                                              roleButtonRefs.current[u._id]
-                                            }
-                                            onClose={() =>
-                                              setRoleMenuUserId(null)
-                                            }
-                                          >
-                                            {ROLE_OPTIONS.filter(
-                                              (r) => r !== u.role,
-                                            ).map((r) => (
-                                              <button
-                                                key={r}
-                                                data-role={r}
-                                                onClick={() =>
-                                                  requestRoleChange(u, r)
-                                                }
-                                                className="role-option"
-                                                style={{
-                                                  background: "transparent",
-                                                  border:
-                                                    "1px solid transparent",
-                                                  padding: "8px 10px",
-                                                  borderRadius: "6px",
-                                                  color: "var(--c-light)",
-                                                  cursor: "pointer",
-                                                  textAlign: "left",
-                                                  textTransform: "capitalize",
-                                                  borderRadius: "11px",
-                                                }}
-                                              >
-                                                {r}
-                                              </button>
-                                            ))}
-                                          </RoleMenu>
-                                        )}
-                                      </div>
-                                    )}
-                                    <button
-                                      onClick={() => handleToggleBlock(u._id)}
-                                      style={{
-                                        background: u.isBlocked
-                                          ? "rgba(16, 185, 129, 0.1)"
-                                          : "rgba(239, 68, 68, 0.1)",
-                                        border: `1px solid ${u.isBlocked ? "rgb(16, 185, 129)" : "rgb(239, 68, 68)"}`,
-                                        borderTop: `1px solid ${u.isBlocked ? "rgba(16, 185, 129, 0.15)" : "rgb(239, 68, 68, 0.15)"}`,
-                                        borderLeft: `1px solid ${u.isBlocked ? "rgba(16, 185, 129, 0.15)" : "rgb(239, 68, 68),0.15"}`,
-                                        padding: "6px 12px",
-                                        borderRadius: "16px",
-                                        color: u.isBlocked
-                                          ? "#10B981"
-                                          : "#ef4444",
-                                        cursor: "pointer",
-                                        backdropFilter: "blur(20px)",
-                                        boxShadow: "var(--shadow)",
-                                      }}
-                                    >
-                                      {u.isBlocked ? "Unblock" : "Block"}
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <UserManagement currentUser={user} />
             )}
 
             {activeTab === "enrollment" && (
@@ -1265,207 +780,49 @@ export default function AdminPortal({
             )}
 
             {activeTab === "courses_all" && (
-              <div>
-                <h2 style={{ fontSize: "1.5rem", marginBottom: "24px" }}>
-                  Pending Course Approvals
-                </h2>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "16px",
-                  }}
-                >
-                  {pendingCourses.length === 0 ? (
-                    <div
-                      className="glass-card"
-                      style={{
-                        padding: "40px",
-                        textAlign: "center",
-                        color: "var(--c-sub)",
-                      }}
-                    >
-                      No pending courses to review. You're all caught up!
-                    </div>
-                  ) : (
-                    pendingCourses.map((course) => (
-                      <div
-                        key={course._id}
-                        className="glass-card hover-glow"
-                        style={{
-                          padding: "24px",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "20px",
-                            alignItems: "center",
-                          }}
-                        >
-                          {course.thumbnailUrl ? (
-                            <img
-                              src={course.thumbnailUrl}
-                              alt={course.title}
-                              style={{
-                                width: "120px",
-                                height: "80px",
-                                objectFit: "cover",
-                                borderRadius: "8px",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: "120px",
-                                height: "80px",
-                                background:
-                                  "linear-gradient(135deg, #3B82F6, #8B5CF6)",
-                                borderRadius: "8px",
-                              }}
-                            ></div>
-                          )}
-                          <div>
-                            <h3
-                              style={{
-                                fontSize: "1.3rem",
-                                margin: "0 0 8px 0",
-                              }}
-                            >
-                              {course.title}
-                            </h3>
-                            <div
-                              style={{
-                                color: "var(--c-sub)",
-                                fontSize: "0.95rem",
-                              }}
-                            >
-                              By {course.instructor?.name || "Unknown"} • EGP{" "}
-                              {course.price} • {course.category}
-                            </div>
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                color: "var(--c-sub)",
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              {course.description.substring(0, 80)}...
-                            </div>
-                          </div>
-                        </div>
+              <CourseManagement />
+            )}
 
-                        <div style={{ display: "flex", gap: "12px" }}>
-                          <button
-                            onClick={() => requestReject(course)}
-                            disabled={processingId === course._id}
-                            className="glass-btn hover-glow"
-                            style={{
-                              padding: "8px 16px",
-                              fontSize: "0.95rem",
-                              color: "#ef4444",
-                              borderColor: "rgba(239, 68, 68, 0.3)",
-                            }}
-                          >
-                            Reject
-                          </button>
-                          <button
-                            onClick={() => handleApprove(course._id)}
-                            disabled={processingId === course._id}
-                            className="glass-btn hover-glow"
-                            style={{
-                              padding: "8px 16px",
-                              fontSize: "0.95rem",
-                              background: "rgba(16, 185, 129, 0.2)",
-                              color: "#10B981",
-                              borderColor: "rgba(16, 185, 129, 0.5)",
-                            }}
-                          >
-                            Approve
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+            {activeTab === "courses_lessons" && (
+              <LessonManagement />
+            )}
+
+            {activeTab === "courses_categories" && (
+              <CategoryManagement />
+            )}
+
+            {activeTab === "settings" && (
+              <SystemManagement user={user} />
+            )}
+
+            {activeTab.startsWith("web_") && (
+              <WebsiteManagement user={user} subTab={activeTab.replace("web_", "")} />
+            )}
+
+            {activeTab === "announcements" && (
+              <WebsiteManagement user={user} subTab="announcements" />
+            )}
+
+            {[
+              "certificates",
+              "reports",
+              "roles",
+              "profile_my",
+              "profile_password",
+            ].includes(activeTab) && (
+              <PlaceholderPage
+                title={
+                  menuGroups
+                    .flatMap((g) => g.items)
+                    .find((t) => t.id === activeTab)?.label ||
+                  activeTab
+                }
+              />
             )}
           </div>
         </div>
       </div>
 
-      {/* Change Role confirmation modal */}
-      {pendingRoleChange && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-          }}
-        >
-          <div
-            className="glass-card animate-entrance"
-            style={{ width: "100%", maxWidth: "420px", padding: "32px" }}
-          >
-            <h2 style={{ margin: "0 0 12px 0", fontSize: "1.3rem" }}>
-              Change role?
-            </h2>
-            <p style={{ color: "var(--c-sub)", margin: "0 0 24px 0" }}>
-              Change{" "}
-              <strong style={{ color: "var(--c-light)" }}>
-                {pendingRoleChange.name}
-              </strong>
-              's role to{" "}
-              <strong
-                data-role={pendingRoleChange.newRole}
-                className="role-text"
-                style={{ textTransform: "capitalize" }}
-              >
-                {pendingRoleChange.newRole}
-              </strong>
-              ?
-            </p>
-            {roleChangeError && (
-              <div
-                style={{
-                  color: "#ef4444",
-                  marginBottom: "16px",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {roleChangeError}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: "16px" }}>
-              <button
-                type="button"
-                onClick={cancelRoleChange}
-                disabled={changingRole}
-                className="glass-btn hover-glow"
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmRoleChange}
-                disabled={changingRole}
-                className="glass-btn auth-submit-btn"
-                style={{ flex: 1 }}
-              >
-                {changingRole ? "Changing..." : "Confirm"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Reject course confirmation modal — requires a reason the instructor will see */}
       {pendingReject && (

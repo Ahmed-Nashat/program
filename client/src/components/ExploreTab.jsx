@@ -12,12 +12,19 @@ export default function ExploreTab({ user }) {
   
   const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [websiteContent, setWebsiteContent] = useState(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await api.get('/courses');
+        const [res, contentRes] = await Promise.all([
+          api.get('/courses'),
+          api.get('/website/public/content').catch(() => null)
+        ]);
         setCourses(res.data.data || res.data.courses || []);
+        if (contentRes && contentRes.data) {
+          setWebsiteContent(contentRes.data);
+        }
       } catch (err) {
         console.error("Failed to fetch courses", err);
       } finally {
@@ -52,13 +59,42 @@ export default function ExploreTab({ user }) {
   return (
     <>
       {/* Hero Banner */}
-      <div className="hero-section glass-card animate-entrance" style={{ animationDelay: '0.1s' }}>
-        <div className="hero-content">
-          <h1>Ready to level up, {firstName}?</h1>
-          <p>Discover new skills, dive into hot topics, and learn from the industry's best instructors.</p>
+      {(!websiteContent || websiteContent.homepage?.sectionsVisibility?.hero) && (
+        <div 
+          className="hero-section glass-card animate-entrance" 
+          style={{ 
+            animationDelay: '0.1s',
+            ...(websiteContent?.homepage?.hero?.heroImage ? {
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${websiteContent.homepage.hero.heroImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            } : {})
+          }}
+        >
+          <div className="hero-content">
+            <h1>{websiteContent?.homepage?.hero?.title ? websiteContent.homepage.hero.title.replace('{name}', firstName) : `Ready to level up, ${firstName}?`}</h1>
+            <p>{websiteContent?.homepage?.hero?.subtitle || "Discover new skills, dive into hot topics, and learn from the industry's best instructors."}</p>
+          </div>
+          <button type="button" className="hero-btn glass-btn">
+            {websiteContent?.homepage?.hero?.primaryButtonText || 'Explore Catalog'}
+          </button>
         </div>
-        <button type="button" className="hero-btn glass-btn">Explore Catalog</button>
-      </div>
+      )}
+
+      {/* Banner */}
+      {websiteContent?.homepage?.banner?.enabled && (
+        <div className="glass-card animate-entrance" style={{ animationDelay: '0.2s', marginTop: '20px', background: 'var(--c-orange)', color: '#000', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ margin: 0 }}>{websiteContent.homepage.banner.title}</h3>
+            <p style={{ margin: 0, fontSize: '14px' }}>{websiteContent.homepage.banner.description}</p>
+          </div>
+          {websiteContent.homepage.banner.ctaText && (
+            <button className="glass-btn" style={{ background: '#000', color: '#fff', border: 'none' }}>
+              {websiteContent.homepage.banner.ctaText}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="dashboard-grid">
         <div className="main-column" style={{ width: '100%' }}>

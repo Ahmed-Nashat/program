@@ -7,13 +7,21 @@ const lessonSchema = new mongoose.Schema(
       required: [true, 'Lesson title is required'],
       trim: true,
     },
+    description: {
+      type: String,
+      default: '',
+    },
     videoUrl: {
       type: String,
       required: [true, 'Video URL is required'],
     },
-    course: {
+    thumbnailUrl: {
+      type: String,
+      default: '',
+    },
+    section: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
+      ref: 'Section',
       required: true,
     },
     // Determines playback order within a course. We set this automatically
@@ -22,6 +30,28 @@ const lessonSchema = new mongoose.Schema(
     order: {
       type: Number,
       required: true,
+    },
+    lessonType: {
+      type: String,
+      enum: ['video', 'reading', 'quiz', 'assignment', 'live'],
+      default: 'video',
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'published', 'hidden', 'archived'],
+      default: 'draft',
+    },
+    duration: {
+      type: Number, // in minutes
+      default: 0,
+    },
+    views: {
+      type: Number,
+      default: 0,
+    },
+    completionRate: {
+      type: Number, // 0-100 percentage
+      default: 0,
     },
   },
   { timestamps: true }
