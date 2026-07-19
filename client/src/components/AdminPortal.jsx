@@ -576,6 +576,7 @@ export default function AdminPortal({
             items: [
               { id: "dashboard_overview", label: "Overview" },
               { id: "dashboard_stats", label: "Statistics" },
+              { id: "dashboard_analytics", label: "Analytics" },
               { id: "dashboard_activity", label: "Recent Activity" },
             ],
           },
