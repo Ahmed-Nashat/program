@@ -10,16 +10,23 @@ import crypto from 'crypto';
 // it to requests automatically, and only the server can read it. This doesn't
 // eliminate all risk (CSRF becomes the concern instead of XSS), but it's the
 // safer default for most apps, which is why we set sameSite + secure below.
-const generateTokenAndSetCookie = (res, userId) => {
+// rememberMe (default true — unchanged behavior for register() and any other
+// caller that doesn't pass it) controls whether the cookie persists across
+// browser restarts. The JWT itself is always valid for the same duration
+// either way; what changes is whether the *cookie* survives closing the
+// browser (maxAge set) or not (session cookie, no maxAge).
+const generateTokenAndSetCookie = (res, userId, rememberMe = true) => {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
+
+  const maxAge = rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined; // 7 days, or a session cookie
 
   res.cookie('token', token, {
     httpOnly: true, // JavaScript on the frontend can never read this cookie
     secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' needed cross-site (Vercel <-> Render)
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, in milliseconds
+    maxAge,
   });
 
   // Double-submit CSRF cookie: sameSite:'none' in production means the browser
@@ -33,7 +40,7 @@ const generateTokenAndSetCookie = (res, userId) => {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge,
   });
 
   return token;

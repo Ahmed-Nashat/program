@@ -64,6 +64,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [role, setRole] = useState('student');
   const [phone, setPhone] = useState('');
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -153,7 +154,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
     if (isLogin) {
       setIsCreatingAccount(true);
       try {
-        const response = await api.post('/auth/login', { email, password });
+        const response = await api.post('/auth/login', { email, password, rememberMe });
         onLoginSuccess(response.data.user);
       } catch (err) {
         setAuthError(err.response?.data?.message || 'Failed to login');
@@ -535,7 +536,17 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
               )}
 
               {isLogin && (
-                <a className="forgot-password">Forgot password?</a>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--c-sub)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    Remember me
+                  </label>
+                  <a className="forgot-password">Forgot password?</a>
+                </div>
               )}
 
               <div className="auth-actions">
