@@ -43,17 +43,34 @@ export const enroll = async (req, res) => {
 export const getMyEnrollments = async (req, res) => {
   try {
     const enrollments = await Enrollment.find({ student: req.user.id })
-      .populate('course')
+      .populate({
+        path: 'course',
+        populate: { path: 'instructor', select: 'name avatar isProgramInstructor' }
+      })
       .sort({ updatedAt: -1 });
 
     // Attach a computed progress percentage to each enrollment so the
     // frontend doesn't have to fetch lesson counts separately for every card.
     const withProgress = await Promise.all(
       enrollments.map(async (enrollment) => {
-        const totalLessons = await Lesson.countDocuments({ course: enrollment.course._id });
+        // Fetch all lessons for the course, sorted by order
+        const allLessons = await Lesson.find({ course: enrollment.course._id }).sort({ order: 1 });
+        const totalLessons = allLessons.length;
+        
+        // Use completedLessons to calculate progress
         const completedCount = enrollment.completedLessons.length;
         const progressPercent = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100);
-        return { ...enrollment.toObject(), totalLessons, progressPercent };
+        
+        // Find current lesson: first lesson not in completedLessons
+        const completedIds = enrollment.completedLessons.map(id => id.toString());
+        const currentLesson = allLessons.find(lesson => !completedIds.includes(lesson._id.toString())) || null;
+
+        return { 
+          ...enrollment.toObject(), 
+          totalLessons, 
+          progressPercent,
+          currentLesson: currentLesson ? { title: currentLesson.title, duration: currentLesson.duration || 10, _id: currentLesson._id } : null
+        };
       })
     );
 
