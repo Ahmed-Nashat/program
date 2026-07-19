@@ -65,7 +65,7 @@ export const register = async (req, res) => {
 // @access  Public
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
@@ -87,7 +87,7 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
     }
 
-    generateTokenAndSetCookie(res, user._id);
+    generateTokenAndSetCookie(res, user._id, rememberMe !== false);
 
     res.status(200).json({
       user: {
