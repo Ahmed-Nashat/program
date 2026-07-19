@@ -1,12 +1,45 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 import api from "../api/axios";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
 
 const ROLE_OPTIONS = ["student", "instructor", "admin"];
 const SIDEBAR_TAB_STEP = 44;
+
+// Custom tooltip for the revenue analytics chart — mirrors the glass-card
+// look used everywhere else in this portal rather than recharts' default box.
+const RevenueTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div
+      style={{
+        background: "rgba(15,17,23,0.95)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        fontSize: "0.82rem",
+        minWidth: "160px",
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: "6px", color: "var(--c-light)" }}>{label}</div>
+      {payload.map((entry) => (
+        <div key={entry.dataKey} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: entry.color, flexShrink: 0 }} />
+          <span style={{ color: "var(--c-sub)" }}>{entry.name}: </span>
+          <span style={{ color: entry.color, fontWeight: 700 }}>
+            {entry.dataKey === "revenue" ? `EGP ${entry.value.toLocaleString()}` : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const isSidebarTabActive = (tabId, currentTab) => {
   if (tabId === "users") {
@@ -163,6 +196,8 @@ export default function AdminPortal({
   const [pendingCourses, setPendingCourses] = useState([]);
   const [activity, setActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [revenueAnalytics, setRevenueAnalytics] = useState(null);
+  const [revenueAnalyticsLoading, setRevenueAnalyticsLoading] = useState(true);
 
   // Loading & Processing States
   const [loading, setLoading] = useState(true);
@@ -246,6 +281,18 @@ export default function AdminPortal({
     }
   };
 
+  const fetchRevenueAnalytics = async () => {
+    setRevenueAnalyticsLoading(true);
+    try {
+      const res = await api.get("/admin/revenue-analytics");
+      setRevenueAnalytics(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRevenueAnalyticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user?.role !== "admin" && user?.role !== "superadmin") {
       navigate("/");
@@ -265,6 +312,10 @@ export default function AdminPortal({
 
     if (activeTab === "dashboard_activity") {
       fetchActivity();
+    }
+
+    if (activeTab === "dashboard_stats" || activeTab === "dashboard_analytics") {
+      fetchRevenueAnalytics();
     }
   }, [user, navigate, activeTab]);
 
@@ -525,6 +576,7 @@ export default function AdminPortal({
             items: [
               { id: "dashboard_overview", label: "Overview" },
               { id: "dashboard_stats", label: "Statistics" },
+              { id: "dashboard_analytics", label: "Analytics" },
               { id: "dashboard_activity", label: "Recent Activity" },
             ],
           },
@@ -990,6 +1042,134 @@ export default function AdminPortal({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "dashboard_stats" && (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+              >
+                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Statistics</h2>
+
+                {revenueAnalyticsLoading ? (
+                  <p style={{ color: "var(--c-sub)" }}>Loading statistics...</p>
+                ) : (
+                  <>
+                    <div className="overview-row first-row">
+                      <div className="glass-card stat-card revenue-card">
+                        <div className="stat-label">Total Revenue (12mo)</div>
+                        <div
+                          className="stat-value"
+                          style={{ color: "#10B981", background: "none", WebkitTextFillColor: "initial" }}
+                        >
+                          EGP <AnimatedNumber value={revenueAnalytics?.totalRevenue} />
+                        </div>
+                      </div>
+                      <div className="glass-card stat-card">
+                        <div className="stat-label">Total Enrollments (12mo)</div>
+                        <div className="stat-value role-text">
+                          <AnimatedNumber value={revenueAnalytics?.totalEnrollments} />
+                        </div>
+                      </div>
+                      <div className="glass-card stat-card">
+                        <div className="stat-label">Avg. Order Value</div>
+                        <div className="stat-value role-text">
+                          EGP <AnimatedNumber value={revenueAnalytics?.avgOrderValue} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: "24px" }}>
+                      <h3 style={{ margin: "0 0 16px 0", fontSize: "1.2rem" }}>
+                        Enrollments by Category
+                      </h3>
+                      {!stats || Object.keys(stats.categoryCounts).length === 0 ? (
+                        <p style={{ color: "var(--c-sub)" }}>No enrollments yet.</p>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                          {Object.entries(stats.categoryCounts).map(([cat, count]) => (
+                            <div
+                              key={cat}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                padding: "12px",
+                                background: "var(--c-input-bg)",
+                                borderRadius: "8px",
+                              }}
+                            >
+                              <span style={{ fontWeight: "500" }}>{cat}</span>
+                              <span style={{ color: "var(--c-orange)", fontWeight: "bold" }}>
+                                {count} enrolled
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === "dashboard_analytics" && (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+              >
+                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Analytics</h2>
+
+                <div className="glass-card" style={{ padding: "24px" }}>
+                  <h3 style={{ margin: "0 0 20px 0", fontSize: "1.2rem" }}>
+                    Monthly Revenue (last 12 months)
+                  </h3>
+                  {revenueAnalyticsLoading ? (
+                    <p style={{ color: "var(--c-sub)" }}>Loading analytics...</p>
+                  ) : (
+                    <div style={{ width: "100%", height: 280 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={revenueAnalytics?.series || []}
+                          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis
+                            dataKey="label"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "var(--c-sub)", fontSize: 11 }}
+                            dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "var(--c-sub)", fontSize: 11 }}
+                            tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
+                          />
+                          <Tooltip
+                            content={<RevenueTooltip />}
+                            cursor={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1, strokeDasharray: "4 3" }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            name="Revenue"
+                            stroke="#10B981"
+                            strokeWidth={2.5}
+                            fillOpacity={1}
+                            fill="url(#colorRevenue)"
+                            activeDot={{ r: 6, fill: "#10B981", stroke: "#0f1117", strokeWidth: 2 }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
                     </div>
                   )}
                 </div>
