@@ -7,12 +7,10 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const exploreRef = useRef(null);
   const dashboardRef = useRef(null);
-  const myCoursesRef = useRef(null);
 
   const getActiveRef = () => {
     if (activeTab === 'explore') return exploreRef;
     if (activeTab === 'dashboard') return dashboardRef;
-    if (activeTab === 'mycourses') return myCoursesRef;
     return { current: null };
   };
 
@@ -176,15 +174,6 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
           </Link>
         )}
 
-        {user?.role === 'student' && (
-          <button
-            ref={myCoursesRef}
-            className={`nav-tab ${activeTab === 'mycourses' ? 'active' : ''}`}
-            onClick={() => setActiveTab('mycourses')}
-          >
-            My Courses
-          </button>
-        )}
         <button className="nav-tab" disabled>
           Certificates <span className="badge-soon">Coming soon</span>
         </button>
