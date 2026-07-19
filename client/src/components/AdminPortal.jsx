@@ -1,12 +1,45 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 import api from "../api/axios";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
 
 const ROLE_OPTIONS = ["student", "instructor", "admin"];
 const SIDEBAR_TAB_STEP = 44;
+
+// Custom tooltip for the revenue analytics chart — mirrors the glass-card
+// look used everywhere else in this portal rather than recharts' default box.
+const RevenueTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div
+      style={{
+        background: "rgba(15,17,23,0.95)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        fontSize: "0.82rem",
+        minWidth: "160px",
+        backdropFilter: "blur(10px)",
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: "6px", color: "var(--c-light)" }}>{label}</div>
+      {payload.map((entry) => (
+        <div key={entry.dataKey} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: entry.color, flexShrink: 0 }} />
+          <span style={{ color: "var(--c-sub)" }}>{entry.name}: </span>
+          <span style={{ color: entry.color, fontWeight: 700 }}>
+            {entry.dataKey === "revenue" ? `EGP ${entry.value.toLocaleString()}` : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const isSidebarTabActive = (tabId, currentTab) => {
   if (tabId === "users") {
@@ -1094,50 +1127,49 @@ export default function AdminPortal({
                   {revenueAnalyticsLoading ? (
                     <p style={{ color: "var(--c-sub)" }}>Loading analytics...</p>
                   ) : (
-                    (() => {
-                      const series = revenueAnalytics?.series || [];
-                      const maxRevenue = Math.max(1, ...series.map((m) => m.revenue));
-                      return (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-end",
-                            gap: "10px",
-                            height: "220px",
-                          }}
+                    <div style={{ width: "100%", height: 280 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={revenueAnalytics?.series || []}
+                          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                         >
-                          {series.map((m) => (
-                            <div
-                              key={m.label}
-                              style={{
-                                flex: 1,
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "flex-end",
-                                height: "100%",
-                                gap: "6px",
-                              }}
-                              title={`${m.label}: EGP ${m.revenue.toLocaleString()} (${m.enrollments} enrollments)`}
-                            >
-                              <span style={{ fontSize: "0.7rem", color: "var(--c-sub)" }}>
-                                {m.revenue > 0 ? m.revenue.toLocaleString() : ""}
-                              </span>
-                              <div
-                                style={{
-                                  width: "100%",
-                                  minHeight: "2px",
-                                  height: `${(m.revenue / maxRevenue) * 160}px`,
-                                  background: "linear-gradient(180deg, var(--c-orange), var(--c-yellow))",
-                                  borderRadius: "4px 4px 0 0",
-                                }}
-                              />
-                              <span style={{ fontSize: "0.75rem", color: "var(--c-sub)" }}>{m.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()
+                          <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis
+                            dataKey="label"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "var(--c-sub)", fontSize: 11 }}
+                            dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "var(--c-sub)", fontSize: 11 }}
+                            tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
+                          />
+                          <Tooltip
+                            content={<RevenueTooltip />}
+                            cursor={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1, strokeDasharray: "4 3" }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            name="Revenue"
+                            stroke="#10B981"
+                            strokeWidth={2.5}
+                            fillOpacity={1}
+                            fill="url(#colorRevenue)"
+                            activeDot={{ r: 6, fill: "#10B981", stroke: "#0f1117", strokeWidth: 2 }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   )}
                 </div>
               </div>
