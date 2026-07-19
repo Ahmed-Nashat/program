@@ -537,7 +537,7 @@ export default function AuthPage({ onLoginSuccess, isLightMode, toggleTheme }) {
 
               {isLogin && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--c-sub)', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--c-sub)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
                     <input
                       type="checkbox"
                       checked={rememberMe}
