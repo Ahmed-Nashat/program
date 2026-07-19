@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  getStats, getRecentActivity, getUsers, toggleBlockUser, changeUserRole,
+  getStats, getRecentActivity, getRevenueAnalytics, getUsers, toggleBlockUser, changeUserRole,
   softDeleteUser, restoreUser, getTransactions
 } from '../controllers/adminController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
@@ -12,6 +12,7 @@ router.use(protect, authorize('admin', 'superadmin'));
 
 router.get('/stats', getStats);
 router.get('/activity', getRecentActivity);
+router.get('/revenue-analytics', getRevenueAnalytics);
 router.get('/users', getUsers);
 router.patch('/users/:id/block', toggleBlockUser);
 router.patch('/users/:id/role', changeUserRole);

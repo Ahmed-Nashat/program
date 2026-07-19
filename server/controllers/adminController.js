@@ -84,6 +84,56 @@ export const getStats = async (req, res) => {
   }
 };
 
+// @route   GET /api/admin/revenue-analytics
+// @access  Private (Admin)
+// Real revenue + enrollment counts bucketed by month, for the last 12
+// months — no commission split or payout math, just what was actually
+// paid (Enrollment.amountPaid), aggregated in Mongo. Zero-filled so months
+// with no enrollments still show up as a bar instead of a gap.
+export const getRevenueAnalytics = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setMonth(start.getMonth() - 11);
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const monthly = await Enrollment.aggregate([
+      { $match: { createdAt: { $gte: start } } },
+      {
+        $group: {
+          _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+          revenue: { $sum: { $ifNull: ['$amountPaid', 0] } },
+          enrollments: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const cursor = new Date(start);
+    const series = [];
+    for (let i = 0; i < 12; i++) {
+      const year = cursor.getFullYear();
+      const month = cursor.getMonth() + 1;
+      const bucket = monthly.find((m) => m._id.year === year && m._id.month === month);
+      series.push({
+        label: monthNames[cursor.getMonth()],
+        revenue: bucket?.revenue || 0,
+        enrollments: bucket?.enrollments || 0,
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    const totalRevenue = series.reduce((sum, m) => sum + m.revenue, 0);
+    const totalEnrollments = series.reduce((sum, m) => sum + m.enrollments, 0);
+    const avgOrderValue = totalEnrollments === 0 ? 0 : Math.round(totalRevenue / totalEnrollments);
+
+    res.status(200).json({ series, totalRevenue, totalEnrollments, avgOrderValue });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error fetching revenue analytics' });
+  }
+};
+
 // @route   GET /api/admin/activity
 // @access  Private (Admin)
 // Merges the most recent signups (admin/superadmin only), enrollments, and

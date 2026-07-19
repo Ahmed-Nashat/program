@@ -163,6 +163,8 @@ export default function AdminPortal({
   const [pendingCourses, setPendingCourses] = useState([]);
   const [activity, setActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [revenueAnalytics, setRevenueAnalytics] = useState(null);
+  const [revenueAnalyticsLoading, setRevenueAnalyticsLoading] = useState(true);
 
   // Loading & Processing States
   const [loading, setLoading] = useState(true);
@@ -246,6 +248,18 @@ export default function AdminPortal({
     }
   };
 
+  const fetchRevenueAnalytics = async () => {
+    setRevenueAnalyticsLoading(true);
+    try {
+      const res = await api.get("/admin/revenue-analytics");
+      setRevenueAnalytics(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRevenueAnalyticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user?.role !== "admin" && user?.role !== "superadmin") {
       navigate("/");
@@ -265,6 +279,10 @@ export default function AdminPortal({
 
     if (activeTab === "dashboard_activity") {
       fetchActivity();
+    }
+
+    if (activeTab === "dashboard_stats" || activeTab === "dashboard_analytics") {
+      fetchRevenueAnalytics();
     }
   }, [user, navigate, activeTab]);
 
@@ -991,6 +1009,135 @@ export default function AdminPortal({
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "dashboard_stats" && (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+              >
+                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Statistics</h2>
+
+                {revenueAnalyticsLoading ? (
+                  <p style={{ color: "var(--c-sub)" }}>Loading statistics...</p>
+                ) : (
+                  <>
+                    <div className="overview-row first-row">
+                      <div className="glass-card stat-card revenue-card">
+                        <div className="stat-label">Total Revenue (12mo)</div>
+                        <div
+                          className="stat-value"
+                          style={{ color: "#10B981", background: "none", WebkitTextFillColor: "initial" }}
+                        >
+                          EGP <AnimatedNumber value={revenueAnalytics?.totalRevenue} />
+                        </div>
+                      </div>
+                      <div className="glass-card stat-card">
+                        <div className="stat-label">Total Enrollments (12mo)</div>
+                        <div className="stat-value role-text">
+                          <AnimatedNumber value={revenueAnalytics?.totalEnrollments} />
+                        </div>
+                      </div>
+                      <div className="glass-card stat-card">
+                        <div className="stat-label">Avg. Order Value</div>
+                        <div className="stat-value role-text">
+                          EGP <AnimatedNumber value={revenueAnalytics?.avgOrderValue} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: "24px" }}>
+                      <h3 style={{ margin: "0 0 16px 0", fontSize: "1.2rem" }}>
+                        Enrollments by Category
+                      </h3>
+                      {!stats || Object.keys(stats.categoryCounts).length === 0 ? (
+                        <p style={{ color: "var(--c-sub)" }}>No enrollments yet.</p>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                          {Object.entries(stats.categoryCounts).map(([cat, count]) => (
+                            <div
+                              key={cat}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                padding: "12px",
+                                background: "var(--c-input-bg)",
+                                borderRadius: "8px",
+                              }}
+                            >
+                              <span style={{ fontWeight: "500" }}>{cat}</span>
+                              <span style={{ color: "var(--c-orange)", fontWeight: "bold" }}>
+                                {count} enrolled
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === "dashboard_analytics" && (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+              >
+                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Analytics</h2>
+
+                <div className="glass-card" style={{ padding: "24px" }}>
+                  <h3 style={{ margin: "0 0 20px 0", fontSize: "1.2rem" }}>
+                    Monthly Revenue (last 12 months)
+                  </h3>
+                  {revenueAnalyticsLoading ? (
+                    <p style={{ color: "var(--c-sub)" }}>Loading analytics...</p>
+                  ) : (
+                    (() => {
+                      const series = revenueAnalytics?.series || [];
+                      const maxRevenue = Math.max(1, ...series.map((m) => m.revenue));
+                      return (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-end",
+                            gap: "10px",
+                            height: "220px",
+                          }}
+                        >
+                          {series.map((m) => (
+                            <div
+                              key={m.label}
+                              style={{
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "flex-end",
+                                height: "100%",
+                                gap: "6px",
+                              }}
+                              title={`${m.label}: EGP ${m.revenue.toLocaleString()} (${m.enrollments} enrollments)`}
+                            >
+                              <span style={{ fontSize: "0.7rem", color: "var(--c-sub)" }}>
+                                {m.revenue > 0 ? m.revenue.toLocaleString() : ""}
+                              </span>
+                              <div
+                                style={{
+                                  width: "100%",
+                                  minHeight: "2px",
+                                  height: `${(m.revenue / maxRevenue) * 160}px`,
+                                  background: "linear-gradient(180deg, var(--c-orange), var(--c-yellow))",
+                                  borderRadius: "4px 4px 0 0",
+                                }}
+                              />
+                              <span style={{ fontSize: "0.75rem", color: "var(--c-sub)" }}>{m.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               </div>
