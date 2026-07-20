@@ -476,6 +476,19 @@ body.light-mode:has(.student-content)::after {
     display: none;
 }
 
+/* Solid opaque white behind the centered page too — no gradient, no
+   transparency, matching the student content area itself. */
+body.light-mode:has(.student-content) {
+    background: #ffffff;
+}
+
+/* The #root border-inline (var(--border), a cold grey) cut a visible
+   seam between the page margin and the white content column. Drop it
+   here since both sides are the same white now. */
+body.light-mode:has(.student-content) #root {
+    border-inline-color: transparent;
+}
+
 body.light-mode .student-content {
     background: #ffffff;
 }
