@@ -152,104 +152,81 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
   return (
     <div data-role="instructor" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--c-bg)' }}>
       {/* Top Navbar */}
-      <nav className="top-nav" style={{ position: 'relative', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <Link to="/instructor" style={{ display: 'flex', alignItems: 'center' }}>
-            <img
-              src={isLightMode ? `${logoLight}?v=3` : `${logoDark}?v=3`}
-              alt="Program Logo"
-              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
-            />
-          </Link>
-        </div>
-        <div className="nav-logo">
-          <h1 style={{ fontSize: '1.2rem', margin: '0', color: 'var(--text-h)' }}>Instructor Portal</h1>
-        </div>
-        <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
-          <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>
-            {isLightMode ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="12" cy="12" r="4"></circle>
-                <line x1="12" y1="2" x2="12" y2="4"></line>
-                <line x1="12" y1="20" x2="12" y2="22"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="2" y1="12" x2="4" y2="12"></line>
-                <line x1="20" y1="12" x2="22" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            )}
-          </button>
-          <div className="profile-wrapper">
-            <div className="nav-avatar">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="8" r="4"></circle>
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path>
-              </svg>
-            </div>
-            <div className="profile-tooltip">
-              <div className="tooltip-name">{user?.name || 'Instructor'}</div>
-              <hr className="tooltip-divider" />
-              <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>{user?.email}</div>
-              <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="tooltip-link logout-link">Log out</a>
+      <nav className="top-nav">
+        <div className="nav-row-top">
+          <div className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Link to="/instructor" style={{ display: 'flex', alignItems: 'center' }}>
+              <img
+                src={isLightMode ? `${logoLight}?v=3` : `${logoDark}?v=3`}
+                alt="Program Logo"
+                style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+              />
+            </Link>
+            <span style={{ fontSize: '0.95rem', color: 'var(--text-h)', fontWeight: 'bold' }}>Instructor</span>
+          </div>
+
+          <div className="nav-controls">
+            <button className="nav-icon-btn" onClick={toggleTheme}>
+              {isLightMode ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <line x1="12" y1="2" x2="12" y2="4"></line>
+                  <line x1="12" y1="20" x2="12" y2="22"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="2" y1="12" x2="4" y2="12"></line>
+                  <line x1="20" y1="12" x2="22" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              )}
+            </button>
+            <div className="profile-wrapper">
+              <div className="nav-avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="12" cy="8" r="4"></circle>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path>
+                </svg>
+              </div>
+              <div className="profile-tooltip">
+                <div className="tooltip-name">{user?.name || 'Instructor'}</div>
+                <hr className="tooltip-divider" />
+                <div style={{ padding: '0 12px 8px', fontSize: '0.8rem', color: 'var(--c-sub)' }}>{user?.email}</div>
+                <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="tooltip-link logout-link">Log out</a>
+              </div>
             </div>
           </div>
+        </div>
+
+        <div className="nav-row-bottom" data-role="instructor" style={{ maxWidth: '1000px', width: '100%' }}>
+          <button className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            Dashboard
+          </button>
+          <button className={`nav-tab ${activeTab === 'curriculum' ? 'active' : ''}`} onClick={() => setActiveTab('curriculum')}>
+            Curriculum
+          </button>
+          <button className={`nav-tab ${activeTab === 'engagement' ? 'active' : ''}`} onClick={() => setActiveTab('engagement')}>
+            Engagement
+          </button>
+          <button className={`nav-tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
+            Reviews
+          </button>
+          <button className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
+            Analytics
+          </button>
+          <button className={`nav-tab ${activeTab === 'financials' ? 'active' : ''}`} onClick={() => setActiveTab('financials')}>
+            Financials
+          </button>
         </div>
       </nav>
 
-      <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '140px 40px 40px 40px', overflowY: 'auto' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
-          <div className="role-tabs" style={{ marginBottom: '32px' }}>
-            <button
-              className={`role-tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-              data-role="instructor"
-            >
-              Dashboard
-            </button>
-            <button
-              className={`role-tab-button ${activeTab === 'curriculum' ? 'active' : ''}`}
-              onClick={() => setActiveTab('curriculum')}
-              data-role="instructor"
-            >
-              Curriculum
-            </button>
-            <button
-              className={`role-tab-button ${activeTab === 'engagement' ? 'active' : ''}`}
-              onClick={() => setActiveTab('engagement')}
-              data-role="instructor"
-            >
-              Engagement
-            </button>
-            <button
-              className={`role-tab-button ${activeTab === 'reviews' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reviews')}
-              data-role="instructor"
-            >
-              Reviews
-            </button>
-            <button
-              className={`role-tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analytics')}
-              data-role="instructor"
-            >
-              Analytics
-            </button>
-            <button
-              className={`role-tab-button ${activeTab === 'financials' ? 'active' : ''}`}
-              onClick={() => setActiveTab('financials')}
-              data-role="instructor"
-            >
-              Financials
-            </button>
-          </div>
-
           {activeTab === 'curriculum' ? (
             <div className="animate-entrance">
               <CurriculumBuilderTab 
