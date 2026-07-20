@@ -11,6 +11,7 @@ import LearningPortal from './components/LearningPortal';
 import CheckoutPage from './components/CheckoutPage';
 import InstructorPortal from './components/InstructorPortal';
 import AdminPortal from './components/AdminPortal';
+import SettingsPage from './components/SettingsPage';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -182,6 +183,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/student" replace />} />
           <Route path="/student" element={<ExploreTab user={user} searchQuery={searchQuery} />} />
           <Route path="/student/dashboard" element={<DashboardTab />} />
+          <Route path="/student/settings" element={<SettingsPage user={user} setUser={setUser} isLightMode={isLightMode} toggleTheme={toggleTheme} onLogout={handleLogout} />} />
           <Route path="/course/:id" element={<CoursePage cart={cart} setCart={setCart} />} />
         </Routes>
       </main>
