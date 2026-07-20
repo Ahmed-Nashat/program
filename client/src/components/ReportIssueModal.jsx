@@ -102,7 +102,7 @@ export default function ReportIssueModal({ isOpen, course, onClose, onSubmit }) 
           {category === 'Specific instructor' && course?.instructor && (
             <div className="input-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: 'var(--c-sub)', fontSize: '0.9rem' }}>Instructor:</span>
-              <span className="role-badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+              <span className="role-badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                 {course.instructor.name || "Unknown Instructor"}
               </span>
             </div>
