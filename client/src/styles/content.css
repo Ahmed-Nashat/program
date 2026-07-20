@@ -779,7 +779,7 @@ box-shadow: var(--shadow);
 /* Responsive grid: 4 â†’ 3 â†’ 2 â†’ 1 */
 .cc-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     margin-top: 8px;
 }

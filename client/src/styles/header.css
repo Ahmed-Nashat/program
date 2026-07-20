@@ -37,6 +37,7 @@ input:focus {
     outline: none !important;
 }
 
+
 /* Ambient Animated Glowing Orbs Background */
 body::before,
 body::after {
@@ -467,6 +468,8 @@ body.light-mode::before,
 body.light-mode::after {
     opacity: 0.25;
 }
+
+
 
 /* Fix Hover States in Light Mode */
 body.light-mode .course-card:hover,
