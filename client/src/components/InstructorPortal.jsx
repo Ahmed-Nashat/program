@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import CustomSelect from './CustomSelect';
 import api from '../api/axios';
 import logoDark from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
+import InstructorAnalyticsTab from './InstructorAnalyticsTab';
+import CurriculumBuilderTab from './CurriculumBuilderTab';
+import InstructorEngagementTab from './InstructorEngagementTab';
+import InstructorFinancialsTab from './InstructorFinancialsTab';
+import InstructorReviewsTab from './InstructorReviewsTab';
 
 export default function InstructorPortal({ user, onLogout, toggleTheme, isLightMode }) {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [timeSeries, setTimeSeries] = useState([]);
   const [lessonsByCourse, setLessonsByCourse] = useState({});
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,6 +53,14 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
         })
       );
       setLessonsByCourse(Object.fromEntries(lessonEntries));
+
+      try {
+        const statsRes = await api.get('/courses/stats');
+        setStats(statsRes.data.courseStats || []);
+        setTimeSeries(statsRes.data.timeSeriesData || []);
+      } catch (statsErr) {
+        console.error('Failed to load stats', statsErr);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -137,20 +154,16 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
       {/* Top Navbar */}
       <nav className="top-nav" style={{ position: 'relative', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px', height: '70px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <Link to="/student" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to="/instructor" style={{ display: 'flex', alignItems: 'center' }}>
             <img
               src={isLightMode ? `${logoLight}?v=3` : `${logoDark}?v=3`}
               alt="Program Logo"
               style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
             />
           </Link>
-          <button onClick={() => navigate('/student')} style={{ background: 'transparent', border: 'none', color: 'var(--c-sub)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            <span style={{ marginLeft: '8px' }}>Back to Student View</span>
-          </button>
         </div>
         <div className="nav-logo">
-          <h1 className="role-text" style={{ fontSize: '1.2rem', margin: '0' }}>Instructor Portal</h1>
+          <h1 style={{ fontSize: '1.2rem', margin: '0', color: 'var(--text-h)' }}>Instructor Portal</h1>
         </div>
         <div className="nav-controls" style={{ display: 'flex', alignItems: 'center' }}>
           <button className="nav-icon-btn" onClick={toggleTheme} style={{ marginRight: '16px' }}>
@@ -192,17 +205,116 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
       <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '2rem', margin: 0 }}>My Courses</h2>
-            <button onClick={() => { setError(''); setShowCreateModal(true); }} className="glass-btn auth-submit-btn" style={{ width: 'auto', padding: '12px 24px' }}>
+          <div className="role-tabs" style={{ marginBottom: '32px' }}>
+            <button
+              className={`role-tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+              data-role="instructor"
+            >
+              Dashboard
+            </button>
+            <button
+              className={`role-tab-button ${activeTab === 'curriculum' ? 'active' : ''}`}
+              onClick={() => setActiveTab('curriculum')}
+              data-role="instructor"
+            >
+              Curriculum
+            </button>
+            <button
+              className={`role-tab-button ${activeTab === 'engagement' ? 'active' : ''}`}
+              onClick={() => setActiveTab('engagement')}
+              data-role="instructor"
+            >
+              Engagement
+            </button>
+            <button
+              className={`role-tab-button ${activeTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reviews')}
+              data-role="instructor"
+            >
+              Reviews
+            </button>
+            <button
+              className={`role-tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+              data-role="instructor"
+            >
+              Analytics
+            </button>
+            <button
+              className={`role-tab-button ${activeTab === 'financials' ? 'active' : ''}`}
+              onClick={() => setActiveTab('financials')}
+              data-role="instructor"
+            >
+              Financials
+            </button>
+          </div>
+
+          {activeTab === 'curriculum' ? (
+            <div className="animate-entrance">
+              <CurriculumBuilderTab 
+                courses={courses} 
+                lessonsByCourse={lessonsByCourse} 
+                onOpenAddLesson={(courseId) => {
+                  setError('');
+                  setSelectedCourseId(courseId);
+                  setShowLessonModal(true);
+                }}
+              />
+            </div>
+          ) : activeTab === 'engagement' ? (
+            <div className="animate-entrance">
+              <InstructorEngagementTab courses={courses} />
+            </div>
+          ) : activeTab === 'analytics' ? (
+            <div className="animate-entrance">
+              <InstructorAnalyticsTab 
+                courses={courses}
+                stats={stats} 
+                timeSeries={timeSeries}
+              />
+            </div>
+          ) : activeTab === 'financials' ? (
+            <InstructorFinancialsTab user={user} />
+          ) : activeTab === 'reviews' ? (
+            <div className="animate-entrance">
+              <InstructorReviewsTab />
+            </div>
+          ) : (
+            <div className="animate-entrance">
+              {/* Analytics Overview */}
+              <div className="stats-grid animate-entrance" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '48px' }}>
+                <div className="stat-card glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ color: 'var(--c-sub)', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total Revenue</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-h)', marginTop: 'auto' }}>
+                    EGP {stats.reduce((sum, s) => sum + s.revenue, 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="stat-card glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ color: 'var(--c-sub)', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total Enrollments</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-h)', marginTop: 'auto' }}>
+                    {stats.reduce((sum, s) => sum + s.enrolled, 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="stat-card glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ color: 'var(--c-sub)', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Active Courses</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-h)', marginTop: 'auto' }}>{courses.length}</div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center mb-8" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '2rem', margin: 0, color: 'var(--text-h)' }}>My Courses</h2>
+            <button onClick={() => { setError(''); setShowCreateModal(true); }} className="sys-btn-primary" style={{ width: 'auto' }}>
               + Create New Course
             </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {courses.length === 0 ? (
-              <div className="glass-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--c-sub)' }}>
-                You haven't created any courses yet.
+              <div className="glass-card" style={{ padding: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                <p style={{ color: 'var(--c-sub)', fontSize: '1.1rem', margin: 0 }}>
+                  You haven't created any courses yet. Start sharing your knowledge with the world!
+                </p>
               </div>
             ) : (
               courses.map(course => {
@@ -242,12 +354,6 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => { setError(''); setSelectedCourseId(course._id); setShowLessonModal(true); }}
-                      className="glass-btn hover-glow" style={{ padding: '8px 16px', fontSize: '0.95rem' }}
-                    >
-                      + Add Lesson
-                    </button>
                   </div>
 
                   {lessons.length > 0 && (
@@ -266,6 +372,8 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
             )}
           </div>
         </div>
+      )}
+        </div>
       </div>
 
       {/* Create Course Modal */}
@@ -275,39 +383,43 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
             <h2 style={{ margin: '0 0 24px 0' }}>Create New Course</h2>
             {error && <div style={{ color: '#ef4444', marginBottom: '16px' }}>{error}</div>}
             
-            <form onSubmit={handleCreateCourse}>
-              <div className="auth-input-group">
+            <form onSubmit={handleCreateCourse} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="input-group">
                 <label>Course Title</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="auth-input" placeholder="e.g. Advanced React Patterns" />
+                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. Advanced React Patterns" />
               </div>
-              <div className="auth-input-group">
+              <div className="input-group">
                 <label>Description</label>
-                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="auth-input" style={{ minHeight: '100px' }} placeholder="What will students learn?" />
+                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} style={{ minHeight: '100px', resize: 'vertical' }} placeholder="What will students learn?" />
               </div>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="auth-input-group" style={{ flex: 1 }}>
+              <div className="input-row">
+                <div className="input-group">
                   <label>Price (EGP)</label>
-                  <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="auth-input" placeholder="e.g. 500" />
+                  <input required type="number" min="0" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} placeholder="e.g. 500" />
                 </div>
-                <div className="auth-input-group" style={{ flex: 1 }}>
+                <div className="input-group">
                   <label>Category</label>
-                  <select required value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="auth-input">
-                    <option value="">Select a category</option>
-                    <option value="Development">Development</option>
-                    <option value="Design">Design</option>
-                    <option value="Business">Business</option>
-                    <option value="Data">Data</option>
-                  </select>
+                  <CustomSelect 
+                    value={formData.category} 
+                    onChange={val => setFormData({...formData, category: val})}
+                    placeholder="Select a category"
+                    options={[
+                      { value: "Development", label: "Development" },
+                      { value: "Design", label: "Design" },
+                      { value: "Business", label: "Business" },
+                      { value: "Data", label: "Data" }
+                    ]}
+                  />
                 </div>
               </div>
-              <div className="auth-input-group">
+              <div className="input-group">
                 <label>Thumbnail Image</label>
-                <input type="file" accept="image/*" onChange={e => setThumbnailFile(e.target.files[0])} className="auth-input" style={{ padding: '10px' }} />
+                <input type="file" accept="image/*" onChange={e => setThumbnailFile(e.target.files[0])} />
               </div>
               
-              <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-                <button type="button" onClick={() => setShowCreateModal(false)} className="glass-btn hover-glow" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" disabled={submitting} className="glass-btn auth-submit-btn" style={{ flex: 1 }}>
+              <div className="input-row" style={{ marginTop: '16px' }}>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="sys-btn-secondary">Cancel</button>
+                <button type="submit" disabled={submitting} className="sys-btn-primary">
                   {submitting ? 'Creating...' : 'Submit Course'}
                 </button>
               </div>
@@ -323,21 +435,21 @@ export default function InstructorPortal({ user, onLogout, toggleTheme, isLightM
             <h2 style={{ margin: '0 0 24px 0' }}>Add Lesson</h2>
             {error && <div style={{ color: '#ef4444', marginBottom: '16px' }}>{error}</div>}
             
-            <form onSubmit={handleAddLesson}>
-              <div className="auth-input-group">
+            <form onSubmit={handleAddLesson} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="input-group">
                 <label>Lesson Title</label>
-                <input required type="text" value={lessonData.title} onChange={e => setLessonData({...lessonData, title: e.target.value})} className="auth-input" placeholder="e.g. Introduction to State" />
-                <div style={{ fontSize: '0.8rem', color: 'var(--c-sub)', marginTop: '4px' }}>Lessons are numbered automatically in the order you add them.</div>
+                <input required type="text" value={lessonData.title} onChange={e => setLessonData({...lessonData, title: e.target.value})} placeholder="e.g. Introduction to State" />
+                <div className="input-hint">Lessons are numbered automatically in the order you add them.</div>
               </div>
-              <div className="auth-input-group">
+              <div className="input-group">
                 <label>Video File</label>
-                <input required type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} className="auth-input" style={{ padding: '10px' }} />
-                <div style={{ fontSize: '0.8rem', color: 'var(--c-sub)', marginTop: '8px' }}>Uploading directly to Cloudinary</div>
+                <input required type="file" accept="video/*" onChange={e => setVideoFile(e.target.files[0])} />
+                <div className="input-hint">Uploading directly to Cloudinary</div>
               </div>
               
-              <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-                <button type="button" onClick={() => setShowLessonModal(false)} className="glass-btn hover-glow" style={{ flex: 1 }}>Cancel</button>
-                <button type="submit" disabled={submitting} className="glass-btn auth-submit-btn" style={{ flex: 1 }}>
+              <div className="input-row" style={{ marginTop: '16px' }}>
+                <button type="button" onClick={() => setShowLessonModal(false)} className="sys-btn-secondary">Cancel</button>
+                <button type="submit" disabled={submitting} className="sys-btn-primary">
                   {submitting ? 'Uploading Video...' : 'Add Lesson'}
                 </button>
               </div>

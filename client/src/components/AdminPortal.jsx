@@ -1,3 +1,4 @@
+import notyf from '../utils/notyf';
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
@@ -7,6 +8,11 @@ import {
 import api from "../api/axios";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
+import AdminPayoutsTab from "./AdminPayoutsTab";
+
+
+
+
 
 const ROLE_OPTIONS = ["student", "instructor", "admin"];
 const SIDEBAR_TAB_STEP = 44;
@@ -225,6 +231,9 @@ export default function AdminPortal({
   const [expandedGroup, setExpandedGroup] = useState("Dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Recent Activity Filter
+  const [activityFilter, setActivityFilter] = useState("All");
+
   const toggleGroup = (title) => {
     setExpandedGroup((prev) => (prev === title ? null : title));
   };
@@ -344,9 +353,11 @@ export default function AdminPortal({
     setProcessingId(id);
     try {
       await api.patch(`/courses/${id}/approve`);
+      notyf.success('Course approved');
       fetchDashboardData();
     } catch (err) {
       console.error("Failed to approve course", err);
+      notyf.error('Failed to approve course');
     } finally {
       setProcessingId(null);
     }
@@ -378,13 +389,14 @@ export default function AdminPortal({
       await api.patch(`/courses/${pendingReject.id}/reject`, {
         reason: rejectReason.trim(),
       });
+      notyf.success('Course rejected');
       setPendingReject(null);
       setRejectReason("");
       fetchDashboardData();
     } catch (err) {
-      setRejectReasonError(
-        err.response?.data?.message || "Failed to reject course",
-      );
+      const errMsg = err.response?.data?.message || "Failed to reject course";
+      setRejectReasonError(errMsg);
+      notyf.error(errMsg);
     } finally {
       setProcessingId(null);
     }
@@ -529,12 +541,15 @@ export default function AdminPortal({
             ],
           },
           {
-            title: "Enrollment Management",
-            items: [{ id: "enrollment", label: "Enrollments" }],
-          },
-          {
             title: "Certificate Management",
             items: [{ id: "certificates", label: "Certificates" }],
+          },
+          {
+            title: "Financial Management",
+            items: [
+              { id: "enrollment", label: "Enrollments" },
+              { id: "financial_payouts", label: "Payout Requests" },
+            ],
           },
           {
             title: "Website Management",
@@ -603,6 +618,13 @@ export default function AdminPortal({
           {
             title: "Certificate Management",
             items: [{ id: "certificates", label: "Certificates" }],
+          },
+          {
+            title: "Financial Management",
+            items: [
+              { id: "enrollment", label: "Enrollments" },
+              { id: "financial_payouts", label: "Payout Requests" },
+            ],
           },
           {
             title: "Announcement Management",
@@ -783,6 +805,15 @@ export default function AdminPortal({
                     {group.title.charAt(0)}
                   </span>
                   <span className="admin-sidebar-group-label">{group.title}</span>
+                  {group.title === "Course Management" && pendingCourses.length > 0 && (
+                    <span
+                      className="admin-sidebar-badge"
+                      style={{ marginLeft: '8px', marginRight: '8px' }}
+                      aria-label={`${pendingCourses.length} pending courses`}
+                    >
+                      {pendingCourses.length}
+                    </span>
+                  )}
                   <svg
                     className="admin-sidebar-chevron"
                     width="14"
@@ -978,7 +1009,27 @@ export default function AdminPortal({
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "24px" }}
               >
-                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Recent Activity</h2>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Recent Activity</h2>
+                  <div className="role-tabs">
+                    {[
+                      { id: "All", label: "All", role: "student" },
+                      { id: "Approved", label: "Approved", role: "student" },
+                      { id: "Submitted", label: "Submitted", role: "student" },
+                      { id: "Enrolled", label: "Enrolled", role: "student" },
+                      { id: "Admin", label: "Admin/Super Admin", role: "superadmin" }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActivityFilter(tab.id)}
+                        className={"role-tab-button" + (activityFilter === tab.id ? " active" : "")}
+                        data-role={tab.role}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="glass-card" style={{ padding: "24px" }}>
                   {activityLoading ? (
@@ -995,7 +1046,21 @@ export default function AdminPortal({
                         gap: "14px",
                       }}
                     >
-                      {activity.map((item) => (
+                      {(() => {
+                        const filtered = activity.filter(item => {
+                          if (activityFilter === "All") return true;
+                          if (activityFilter === "Approved") return item.title === "Course Approved";
+                          if (activityFilter === "Submitted") return item.title === "Course Submitted";
+                          if (activityFilter === "Enrolled") return item.title === "New Student Enrollment";
+                          if (activityFilter === "Admin") return item.title.includes("Admin");
+                          return true;
+                        });
+
+                        if (filtered.length === 0) {
+                          return <p style={{ color: "var(--c-sub)", textAlign: "center", padding: "16px 0" }}>No activity found for this category.</p>;
+                        }
+
+                        return filtered.map((item) => (
                         <div
                           key={item.id}
                           style={{
@@ -1036,7 +1101,8 @@ export default function AdminPortal({
                             })}
                           </div>
                         </div>
-                      ))}
+                      ));
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1770,27 +1836,16 @@ export default function AdminPortal({
                           <button
                             onClick={() => requestReject(course)}
                             disabled={processingId === course._id}
-                            className="glass-btn hover-glow"
-                            style={{
-                              padding: "8px 16px",
-                              fontSize: "0.95rem",
-                              color: "#ef4444",
-                              borderColor: "rgba(239, 68, 68, 0.3)",
-                            }}
+                            className="sys-btn-danger"
+                            style={{ padding: "8px 16px", fontSize: "0.95rem" }}
                           >
                             Reject
                           </button>
                           <button
                             onClick={() => handleApprove(course._id)}
                             disabled={processingId === course._id}
-                            className="glass-btn hover-glow"
-                            style={{
-                              padding: "8px 16px",
-                              fontSize: "0.95rem",
-                              background: "rgba(16, 185, 129, 0.2)",
-                              color: "#10B981",
-                              borderColor: "rgba(16, 185, 129, 0.5)",
-                            }}
+                            className="sys-btn-success"
+                            style={{ padding: "8px 16px", fontSize: "0.95rem" }}
                           >
                             Approve
                           </button>
@@ -1800,6 +1855,10 @@ export default function AdminPortal({
                   )}
                 </div>
               </div>
+            )}
+            
+            {activeTab === "financial_payouts" && (
+              <AdminPayoutsTab />
             )}
           </div>
         </div>

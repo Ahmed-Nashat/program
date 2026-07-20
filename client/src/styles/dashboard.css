@@ -127,7 +127,7 @@
 
 .dashboard-tab.active {
   background: transparent;
-  color: #000;
+  color: #fff;
   font-weight: 700;
   box-shadow: none;
 }
