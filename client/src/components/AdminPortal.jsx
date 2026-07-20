@@ -743,7 +743,7 @@ export default function AdminPortal({
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* Sidebar */}
         <aside
-          className={`glass-card admin-sidebar${sidebarCollapsed ? " collapsed" : ""}`}
+          className={`admin-sidebar${sidebarCollapsed ? " collapsed" : ""}`}
         >
           <div className="admin-sidebar-header">
             {/* <button
@@ -807,12 +807,7 @@ export default function AdminPortal({
                   }`}
                 >
                   <div className="admin-sidebar-items-inner">
-                    {activeIndex >= 0 && (
-                      <div
-                        className="admin-sidebar-indicator"
-                        style={{ top: `${activeIndex * SIDEBAR_TAB_STEP}px` }}
-                      />
-                    )}
+                    {/* Legacy indicator removed. Active state handled entirely via CSS on the tab itself */}
                     {group.items.map((tab) => {
                       const isActive = isSidebarTabActive(tab.id, activeTab);
 
