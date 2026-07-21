@@ -1,6 +1,7 @@
 import Lesson from '../models/Lesson.js';
 import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
+import Section from '../models/Section.js';
 
 // @route   POST /api/courses/:courseId/lessons
 // @access  Private (instructor only, must own the course)
@@ -24,14 +25,23 @@ export const addLesson = async (req, res) => {
       return res.status(403).json({ message: 'You do not own this course' });
     }
 
-    // Auto-number the lesson based on how many already exist, so the
-    // instructor never has to think about ordering manually.
-    const existingCount = await Lesson.countDocuments({ course: courseId });
+    // Backward compatibility: Find or create a default section for this course
+    let section = await Section.findOne({ course: courseId }).sort({ order: 1 });
+    if (!section) {
+      section = await Section.create({
+        course: courseId,
+        title: 'Course Content',
+        order: 1,
+        status: 'published'
+      });
+    }
+
+    const existingCount = await Lesson.countDocuments({ section: section._id });
 
     const lesson = await Lesson.create({
       title,
       videoUrl,
-      course: courseId,
+      section: section._id,
       order: existingCount + 1,
     });
 
@@ -66,9 +76,9 @@ export const getLessonContent = async (req, res) => {
       }
     }
 
-    const lesson = await Lesson.findOne({ _id: lessonId, course: courseId });
-    if (!lesson) {
-      return res.status(404).json({ message: 'Lesson not found' });
+    const lesson = await Lesson.findById(lessonId).populate('section');
+    if (!lesson || !lesson.section || lesson.section.course.toString() !== courseId) {
+      return res.status(404).json({ message: 'Lesson not found in this course' });
     }
 
     res.status(200).json({ lesson });

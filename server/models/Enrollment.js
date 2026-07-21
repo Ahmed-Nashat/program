@@ -25,6 +25,14 @@ const enrollmentSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    platformCommission: {
+      type: Number,
+      default: 0,
+    },
+    instructorShare: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

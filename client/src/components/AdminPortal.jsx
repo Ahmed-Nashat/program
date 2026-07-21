@@ -14,6 +14,8 @@ import AdminAnalyticsTab from "./AdminAnalyticsTab";
 import AdminOverviewTab from "./AdminOverviewTab";
 import AdminUserManagementTab from "./AdminUserManagementTab";
 import AdminCourseManagementTab from "./AdminCourseManagementTab";
+import WebsiteManagement from "./WebsiteManagement/WebsiteManagement";
+import SystemManagement from "./SystemManagement";
 
 
 
@@ -1139,6 +1141,29 @@ export default function AdminPortal({
             
             {activeTab === "financial_payouts" && (
               <AdminPayoutsTab />
+            )}
+
+            {activeTab === "web_home" && (
+              <WebsiteManagement user={user} subTab="home" />
+            )}
+            {activeTab === "web_about" && (
+              <WebsiteManagement user={user} subTab="about" />
+            )}
+            {activeTab === "web_faq" && (
+              <WebsiteManagement user={user} subTab="faq" />
+            )}
+            {activeTab === "web_contact" && (
+              <WebsiteManagement user={user} subTab="contact" />
+            )}
+            {activeTab === "web_testimonials" && (
+              <WebsiteManagement user={user} subTab="testimonials" />
+            )}
+            {activeTab === "announcements" && (
+              <WebsiteManagement user={user} subTab="announcements" />
+            )}
+
+            {activeTab === "settings" && (
+              <SystemManagement user={user} />
             )}
           </div>
         </div>

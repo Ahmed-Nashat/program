@@ -2,6 +2,7 @@ import Transaction from '../models/Transaction.js';
 import User from '../models/User.js';
 import Course from '../models/Course.js';
 import Enrollment from '../models/Enrollment.js';
+import Lesson from '../models/Lesson.js';
 import { escapeRegex } from '../utils/escapeRegex.js';
 
 // @route   GET /api/admin/stats
@@ -70,12 +71,17 @@ export const getStats = async (req, res) => {
       superAdmins: await getGrowth('superadmin'),
     };
 
+    const platformCommission = 30;
+    const companyShare = (totalRevenue * platformCommission) / 100;
+
     res.status(200).json({
       totalStudents,
       totalInstructors,
       totalAdmins,
       totalSuperAdmins,
       totalRevenue,
+      platformCommission,
+      companyShare,
       categoryCounts,
       growth
     });
@@ -208,13 +214,15 @@ export const getRecentActivity = async (req, res) => {
 // @access  Private (Admin)
 export const getUsers = async (req, res) => {
   try {
-    const { search, page, limit, includeDeleted } = req.query;
+    const { search, page, limit, role, includeDeleted } = req.query;
     let query = {};
 
     // By default, hide soft-deleted users from admin lists.
     if (includeDeleted !== 'true') {
       query.isDeleted = { $ne: true };
     }
+
+    if (role) query.role = role;
 
     if (search) {
       const searchRegex = new RegExp(escapeRegex(search), 'i');

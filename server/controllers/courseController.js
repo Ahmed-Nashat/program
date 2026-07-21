@@ -1,6 +1,7 @@
 import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
 import Enrollment from '../models/Enrollment.js';
+import Section from '../models/Section.js';
 import { escapeRegex } from '../utils/escapeRegex.js';
 import mongoose from 'mongoose';
 
@@ -241,8 +242,11 @@ export const getCourseById = async (req, res) => {
       return res.status(403).json({ message: 'This course is not yet available' });
     }
 
-    const lessons = await Lesson.find({ course: course._id })
-      .select('title order') // deliberately excludes videoUrl — see getLessonContent for the gated endpoint
+    const sections = await Section.find({ course: course._id });
+    const sectionIds = sections.map(s => s._id);
+
+    const lessons = await Lesson.find({ section: { $in: sectionIds } })
+      .select('title order section') // deliberately excludes videoUrl — see getLessonContent for the gated endpoint
       .sort({ order: 1 });
 
     res.status(200).json({ course, lessons });

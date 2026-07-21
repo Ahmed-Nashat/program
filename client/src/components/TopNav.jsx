@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import logoDark from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
+import { useConfig } from '../context/ConfigContext';
 
 export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isLightMode, onLogout, cartCount, notifications, searchQuery, onSearchChange }) {
+  const { config } = useConfig();
+  const platformName = config?.general?.platformName || 'Program LMS';
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const exploreRef = useRef(null);
   const dashboardRef = useRef(null);
@@ -49,6 +52,9 @@ export default function TopNav({ user, activeTab, setActiveTab, toggleTheme, isL
               style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
             />
           </Link>
+          <span style={{ marginLeft: '12px', fontWeight: 'bold', color: 'var(--text-1)' }}>
+            {platformName}
+          </span>
         </div>
 
         <div className="nav-search">

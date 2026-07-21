@@ -2,6 +2,8 @@ import Enrollment from '../models/Enrollment.js';
 import Course from '../models/Course.js';
 import Lesson from '../models/Lesson.js';
 import Transaction from '../models/Transaction.js';
+import Section from '../models/Section.js';
+import { getInternalConfig } from '../utils/configFetcher.js';
 
 // @route   POST /api/enrollments/:courseId
 // @access  Private (student)
@@ -22,10 +24,18 @@ export const enroll = async (req, res) => {
       return res.status(409).json({ message: 'You are already enrolled in this course' });
     }
 
+    // Calculate financial distribution based on system config
+    const config = await getInternalConfig();
+    const commissionPercent = config?.financial?.commission || 15;
+    const platformCommission = (course.price * commissionPercent) / 100;
+    const instructorShare = course.price - platformCommission;
+
     const enrollment = await Enrollment.create({ 
       student: req.user.id, 
       course: courseId,
-      amountPaid: course.price
+      amountPaid: course.price,
+      platformCommission,
+      instructorShare
     });
 
     // Generate 70% revenue split transaction for the instructor
@@ -68,8 +78,10 @@ export const getMyEnrollments = async (req, res) => {
     // frontend doesn't have to fetch lesson counts separately for every card.
     const withProgress = await Promise.all(
       enrollments.map(async (enrollment) => {
-        // Fetch all lessons for the course, sorted by order
-        const allLessons = await Lesson.find({ course: enrollment.course._id }).sort({ order: 1 });
+        // Fetch all lessons for the course (via its sections), sorted by order
+        const sections = await Section.find({ course: enrollment.course._id });
+        const sectionIds = sections.map(s => s._id);
+        const allLessons = await Lesson.find({ section: { $in: sectionIds } }).sort({ order: 1 });
         const totalLessons = allLessons.length;
         
         // Use completedLessons to calculate progress
@@ -108,7 +120,9 @@ export const getEnrollmentStatus = async (req, res) => {
       return res.status(200).json({ enrolled: false });
     }
 
-    const totalLessons = await Lesson.countDocuments({ course: courseId });
+    const sections = await Section.find({ course: courseId });
+    const sectionIds = sections.map(s => s._id);
+    const totalLessons = await Lesson.countDocuments({ section: { $in: sectionIds } });
     const progressPercent =
       totalLessons === 0 ? 0 : Math.round((enrollment.completedLessons.length / totalLessons) * 100);
 
@@ -137,8 +151,8 @@ export const markLessonComplete = async (req, res) => {
 
     // Confirm the lesson actually belongs to this course — prevents a student
     // from marking a lesson from a DIFFERENT course as complete on this enrollment.
-    const lesson = await Lesson.findOne({ _id: lessonId, course: courseId });
-    if (!lesson) {
+    const lesson = await Lesson.findById(lessonId).populate('section');
+    if (!lesson || !lesson.section || lesson.section.course.toString() !== courseId) {
       return res.status(404).json({ message: 'Lesson not found in this course' });
     }
 
@@ -147,7 +161,9 @@ export const markLessonComplete = async (req, res) => {
     enrollment.completedLessons.addToSet(lessonId);
     await enrollment.save();
 
-    const totalLessons = await Lesson.countDocuments({ course: courseId });
+    const sections = await Section.find({ course: courseId });
+    const sectionIds = sections.map(s => s._id);
+    const totalLessons = await Lesson.countDocuments({ section: { $in: sectionIds } });
     const progressPercent =
       totalLessons === 0 ? 0 : Math.round((enrollment.completedLessons.length / totalLessons) * 100);
 

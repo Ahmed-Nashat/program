@@ -14,7 +14,7 @@ router.get('/stats', getStats);
 router.get('/activity', getRecentActivity);
 router.get('/revenue-analytics', getRevenueAnalytics);
 router.get('/users', getUsers);
-router.patch('/users/:id/block', toggleBlockUser);
+router.patch('/users/:id/block', toggleBlockUser); // Keep for backwards compatibility
 router.patch('/users/:id/role', changeUserRole);
 router.delete('/users/:id/soft-delete', softDeleteUser);
 router.patch('/users/:id/restore', restoreUser);

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { getInternalConfig } from './configFetcher.js';
 
 // Creates a signed JWT and sets it as an HTTP-only cookie on the response.
 //
@@ -14,13 +15,18 @@ import crypto from 'crypto';
 // caller that doesn't pass it) controls whether the cookie persists across
 // browser restarts. The JWT itself is always valid for the same duration
 // either way; what changes is whether the *cookie* survives closing the
-// browser (maxAge set) or not (session cookie, no maxAge).
-const generateTokenAndSetCookie = (res, userId, rememberMe = true) => {
+// browser (maxAge set) or not (session cookie, no maxAge). Token duration
+// itself comes from SystemConfig (security.jwtExpiration), admin-configurable,
+// falling back to 7 days.
+const generateTokenAndSetCookie = async (res, userId, rememberMe = true) => {
+  const config = await getInternalConfig();
+  const jwtExpirationDays = config?.security?.jwtExpiration || 7;
+
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: `${jwtExpirationDays}d`,
   });
 
-  const maxAge = rememberMe ? 7 * 24 * 60 * 60 * 1000 : undefined; // 7 days, or a session cookie
+  const maxAge = rememberMe ? jwtExpirationDays * 24 * 60 * 60 * 1000 : undefined; // configured duration, or a session cookie
 
   res.cookie('token', token, {
     httpOnly: true, // JavaScript on the frontend can never read this cookie
