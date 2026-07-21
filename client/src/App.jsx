@@ -11,6 +11,7 @@ import LearningPortal from './components/LearningPortal';
 import CheckoutPage from './components/CheckoutPage';
 import InstructorPortal from './components/InstructorPortal';
 import AdminPortal from './components/AdminPortal';
+import SettingsPage from './components/SettingsPage';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -61,6 +62,8 @@ export default function App() {
       return [];
     }
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,21 +169,24 @@ export default function App() {
 
   return (
     <>
-      <TopNav 
+      <TopNav
         user={user}
-        activeTab={activeTab} 
-        setActiveTab={(tab) => navigate(tab === 'explore' ? '/student' : `/student/${tab}`)} 
-        toggleTheme={toggleTheme} 
+        activeTab={activeTab}
+        setActiveTab={(tab) => navigate(tab === 'explore' ? '/student' : `/student/${tab}`)}
+        toggleTheme={toggleTheme}
         isLightMode={isLightMode}
         onLogout={handleLogout}
         cartCount={cart.length}
         notifications={notifications}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
-      <main className="content">
+      <main className="content student-content">
         <Routes>
           <Route path="/" element={<Navigate to="/student" replace />} />
-          <Route path="/student" element={<ExploreTab user={user} />} />
+          <Route path="/student" element={<ExploreTab user={user} searchQuery={searchQuery} />} />
           <Route path="/student/dashboard" element={<DashboardTab />} />
+          <Route path="/student/settings" element={<SettingsPage user={user} setUser={setUser} isLightMode={isLightMode} toggleTheme={toggleTheme} onLogout={handleLogout} />} />
           <Route path="/course/:id" element={<CoursePage cart={cart} setCart={setCart} />} />
         </Routes>
       </main>
