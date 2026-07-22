@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
 import studentLogo from "../assets/logo.png";
+import Footer from "./Footer";
 import "../styles/student-layout.css";
+import "../styles/static-pages.css";
 
 export default function StudentLayout({
   user,
@@ -317,7 +319,10 @@ export default function StudentLayout({
         </header>
 
         {/* PAGE CONTENT */}
-        <div className="student-content-scroll">{children}</div>
+        <div className="student-content-scroll">
+          {children}
+          <Footer />
+        </div>
       </main>
     </div>
   );
