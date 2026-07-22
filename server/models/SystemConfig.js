@@ -98,7 +98,6 @@ const systemConfigSchema = new mongoose.Schema(
 
     features: {
       notebook: { type: Boolean, default: true },
-      certificates: { type: Boolean, default: true },
       community: { type: Boolean, default: false },
       marketplace: { type: Boolean, default: false },
       aiTutor: { type: Boolean, default: false },

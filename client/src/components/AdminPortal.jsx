@@ -540,10 +540,6 @@ export default function AdminPortal({
             ],
           },
           {
-            title: "Certificate Management",
-            items: [{ id: "certificates", label: "Certificates" }],
-          },
-          {
             title: "Financial Management",
             items: [
               { id: "enrollment", label: "Enrollments" },
@@ -609,10 +605,6 @@ export default function AdminPortal({
           {
             title: "Enrollment Management",
             items: [{ id: "enrollment", label: "Enrollments" }],
-          },
-          {
-            title: "Certificate Management",
-            items: [{ id: "certificates", label: "Certificates" }],
           },
           {
             title: "Financial Management",
