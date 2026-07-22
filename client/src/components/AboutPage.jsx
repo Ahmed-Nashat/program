@@ -20,9 +20,9 @@ export default function AboutPage() {
 
       {isLoading ? (
         <div className="static-page-skeleton">
-          <div className="skeleton-line" style={{ width: '80%' }} />
-          <div className="skeleton-line" style={{ width: '60%' }} />
-          <div className="skeleton-line" style={{ width: '70%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '80%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '60%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '70%' }} />
         </div>
       ) : !hasContent ? (
         <p className="static-page-empty">This page hasn't been filled in yet — check back soon.</p>

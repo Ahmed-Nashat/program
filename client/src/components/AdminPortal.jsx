@@ -16,6 +16,7 @@ import AdminUserManagementTab from "./AdminUserManagementTab";
 import AdminCourseManagementTab from "./AdminCourseManagementTab";
 import WebsiteManagement from "./WebsiteManagement/WebsiteManagement";
 import SystemManagement from "./SystemManagement";
+import Spinner from "./Spinner";
 
 
 
@@ -506,7 +507,7 @@ export default function AdminPortal({
           justifyContent: "center",
         }}
       >
-        Loading Admin Portal...
+        <Spinner label="Loading Admin Portal..." />
       </div>
     );
   }

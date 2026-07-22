@@ -29,9 +29,9 @@ export default function HelpPage() {
 
       {isLoading ? (
         <div className="static-page-skeleton">
-          <div className="skeleton-line" style={{ width: '90%' }} />
-          <div className="skeleton-line" style={{ width: '75%' }} />
-          <div className="skeleton-line" style={{ width: '80%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '90%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '75%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '80%' }} />
         </div>
       ) : faqs.length === 0 ? (
         <p className="static-page-empty">No FAQs published yet — email us and we'll help directly.</p>

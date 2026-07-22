@@ -18,8 +18,8 @@ export default function ContactPage() {
 
       {isLoading ? (
         <div className="static-page-skeleton">
-          <div className="skeleton-line" style={{ width: '70%' }} />
-          <div className="skeleton-line" style={{ width: '50%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '70%' }} />
+          <div className="skeleton-line skeleton-shimmer" style={{ width: '50%' }} />
         </div>
       ) : (
         <div className="static-page-grid-two">

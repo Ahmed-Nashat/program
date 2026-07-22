@@ -232,10 +232,9 @@ export default function ExploreTab({ user, searchQuery = "" }) {
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div
                     key={i}
-                    className="cc-skeleton solid-card"
+                    className="cc-skeleton solid-card skeleton-shimmer"
                     style={{
                       height: "320px",
-                      backgroundColor: "var(--bg-surface)",
                     }}
                   />
                 ))}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import api from "../api/axios";
 import notyf from "../utils/notyf";
 import { createPortal } from "react-dom";
+import Spinner from "./Spinner";
 
 // Generic custom dropdown component to match the system's dark theme
 const CustomDropdown = ({ value, options, onChange, disabled, width = "100%" }) => {
@@ -467,8 +468,8 @@ export default function AdminCourseManagementTab({ currentUser }) {
           <tbody>
             {isLoading ? (
                 <tr>
-                    <td colSpan="7" style={{ padding: "40px", textAlign: "center", color: "var(--c-sub)" }}>
-                        Loading courses...
+                    <td colSpan="7" style={{ padding: "40px", textAlign: "center" }}>
+                        <Spinner size="small" label="Loading courses..." />
                     </td>
                 </tr>
             ) : visibleCourses.length === 0 ? (
