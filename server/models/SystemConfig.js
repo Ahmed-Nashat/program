@@ -6,7 +6,7 @@ const systemConfigSchema = new mongoose.Schema(
     isGlobal: { type: Boolean, default: true, unique: true },
 
     general: {
-      platformName: { type: String, default: 'Program LMS' },
+      platformName: { type: String, default: 'Program' },
       contactEmail: { type: String, default: 'contact@program.com' },
       supportEmail: { type: String, default: 'support@program.com' },
       homepageAnnouncement: { type: String, default: '' },
@@ -70,7 +70,7 @@ const systemConfigSchema = new mongoose.Schema(
       defaultTheme: { type: String, default: 'system' },
       accentColor: { type: String, default: '#3B82F6' },
       landingBanner: { type: String, default: '' },
-      footerInfo: { type: String, default: '© 2026 Program LMS' },
+      footerInfo: { type: String, default: '© 2026 Program' },
     },
 
     maintenance: {
