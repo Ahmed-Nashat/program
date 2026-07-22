@@ -572,13 +572,6 @@ export default function AdminPortal({
             title: "System Settings",
             items: [{ id: "settings", label: "System Settings" }],
           },
-          {
-            title: "Profile",
-            items: [
-              { id: "profile_my", label: "My Profile" },
-              { id: "profile_password", label: "Change Password" },
-            ],
-          },
         ]
       : [
           {
